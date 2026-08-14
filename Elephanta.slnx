@@ -1,3 +1,6 @@
 <Solution>
   <Project Path="Elephanta.API/Elephanta.API.csproj" />
+  <Project Path="Elephanta.Application/Elephanta.Application.csproj" Id="fa77d9e0-3294-46ad-8c65-8c84dd14f600" />
+  <Project Path="Elephanta.Domain/Elephanta.Domain.csproj" Id="6c18023f-582c-4be4-904f-afffb5d0d754" />
+  <Project Path="Elephanta.Infrastructure/Elephanta.Infrastructure.csproj" Id="76425d28-9b3a-4050-ace2-e2dc16ff7de8" />
 </Solution>
