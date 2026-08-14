@@ -1,0 +1,6 @@
+@Elephanta.API_HostAddress = http://localhost:5129
+
+GET {{Elephanta.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
