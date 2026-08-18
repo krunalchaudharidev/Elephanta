@@ -24,6 +24,8 @@ public class ElephantaDbContext : DbContext
 
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
+    public DbSet<UserAddress> UserAddresses { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -32,5 +34,6 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.Entity<UserAddress>();
     }
 }

@@ -11,6 +11,10 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
+        // repository registrations
+        services.AddScoped<Elephanta.Application.Features.Authentication.Interfaces.IUserRepository, Elephanta.Infrastructure.Repositories.UserRepository>();
+        services.AddScoped<Elephanta.Application.Features.Authentication.Interfaces.IUserAddressRepository, Elephanta.Infrastructure.Repositories.UserAddressRepository>();
+
         return services;
     }
 }

@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Elephanta.Application.Features.Authentication.DTOs;
-using Elephanta.Infrastructure.Persistence;
 using Elephanta.Application.Features.Authentication.Interfaces;
 using Elephanta.Application.Features.Authentication.Services;
 using Elephanta.Domain.Entities;
@@ -14,38 +13,40 @@ namespace Elephanta.API.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly ElephantaDbContext _db;
+    private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IConfiguration _configuration;
 
-    public AuthController(ElephantaDbContext db, ITokenService tokenService, IRefreshTokenService refreshTokenService, IConfiguration configuration)
+    public AuthController(IUserRepository userRepository, ITokenService tokenService, IRefreshTokenService refreshTokenService, IConfiguration configuration)
     {
-        _db = db;
+        _userRepository = userRepository;
         _tokenService = tokenService;
         _refreshTokenService = refreshTokenService;
         _configuration = configuration;
     }
 
+
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
-        var exists = await _db.Users.AnyAsync(u => u.Email == req.Email);
+        var exists = await _userRepository.AnyByEmailAsync(req.Email);
         if (exists) return Conflict(new { message = "Email already in use" });
 
         var user = new User
         {
             Id = System.Guid.NewGuid(),
             FirstName = req.FirstName,
+            MiddleName = req.MiddleName,
             LastName = req.LastName,
+            PhoneNumber = req.PhoneNumber,
             Email = req.Email,
             PasswordHash = PasswordHasher.Hash(req.Password),
             IsActive = true,
             CreatedAt = System.DateTime.UtcNow
         };
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        await _userRepository.AddAsync(user);
 
         var access = _tokenService.GenerateAccessToken(user);
         var refresh = await _refreshTokenService.CreateRefreshTokenAsync(user.Id);
@@ -60,7 +61,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
-        var user = await _db.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Email == req.Email);
+        var user = await _userRepository.GetByEmailWithRolesAsync(req.Email);
         if (user == null) return Unauthorized();
 
         if (!PasswordHasher.Verify(req.Password, user.PasswordHash)) return Unauthorized();
@@ -71,6 +72,10 @@ public class AuthController : ControllerBase
         var expiresMinutesText = _configuration["Jwt:ExpiresMinutes"];
         var expiresMinutes = 60;
         if (!string.IsNullOrEmpty(expiresMinutesText) && int.TryParse(expiresMinutesText, out var parsed)) expiresMinutes = parsed;
+
+        // update last login timestamp
+        user.LastLoginAt = System.DateTime.UtcNow;
+        await _userRepository.UpdateAsync(user);
 
         return Ok(new AuthResponse { AccessToken = access, RefreshToken = refresh.Token, ExpiresAt = System.DateTime.UtcNow.AddMinutes(expiresMinutes) });
     }
@@ -84,7 +89,7 @@ public class AuthController : ControllerBase
         // rotate: revoke old and create new
         await _refreshTokenService.RevokeRefreshTokenAsync(existing);
 
-        var user = await _db.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == existing.UserId);
+        var user = await _userRepository.GetByIdWithRolesAsync(existing.UserId);
         if (user == null) return Unauthorized();
 
         var access = _tokenService.GenerateAccessToken(user);
