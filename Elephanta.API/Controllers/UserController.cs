@@ -12,15 +12,16 @@ namespace Elephanta.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UserController : ControllerBase
 {
-    private readonly IUserRepository _userRepo;
-    private readonly IUserAddressRepository _addressRepo;
+    private readonly IUserService _userService;
+    private readonly IUserAddressService _addressService;
 
-    public UserController(IUserRepository userRepo, IUserAddressRepository addressRepo)
+    public UserController(IUserService userService, IUserAddressService addressService)
     {
-        _userRepo = userRepo;
-        _addressRepo = addressRepo;
+        _userService = userService;
+        _addressService = addressService;
     }
 
     [Authorize]
@@ -31,7 +32,7 @@ public class UserController : ControllerBase
         var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
-        var user = await _userRepo.GetByIdAsync(userId);
+        var user = await _userService.GetByIdAsync(userId);
         if (user == null) return NotFound();
 
         // apply updates
@@ -42,7 +43,7 @@ public class UserController : ControllerBase
 
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _userRepo.UpdateAsync(user);
+        await _userService.UpdateAsync(user);
 
         return NoContent();
     }
@@ -54,31 +55,7 @@ public class UserController : ControllerBase
         var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
-        if (req.IsPrimary)
-        {
-            var existingPrimary = await _addressRepo.GetByUserAsync(userId);
-            foreach (var e in existingPrimary.Where(a => a.IsPrimary))
-            {
-                e.IsPrimary = false;
-                await _addressRepo.UpdateAsync(e);
-            }
-        }
-
-        var addr = new UserAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            AddressLine1 = req.AddressLine1,
-            AddressLine2 = req.AddressLine2,
-            City = req.City,
-            State = req.State,
-            PostalCode = req.PostalCode,
-            Country = req.Country,
-            IsPrimary = req.IsPrimary,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await _addressRepo.AddAsync(addr);
+        var addr = await _addressService.CreateAddressAsync(userId, req);
 
         var resp = new UserAddressResponse
         {
@@ -102,7 +79,7 @@ public class UserController : ControllerBase
         var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
-        var list = await _addressRepo.GetByUserAsync(userId);
+        var list = await _addressService.GetByUserAsync(userId);
         var resp = list.Select(a => new UserAddressResponse
         {
             Id = a.Id,
@@ -125,9 +102,8 @@ public class UserController : ControllerBase
         var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
-        var a = await _addressRepo.GetByIdAsync(id);
+        var a = await _addressService.GetByIdAsync(id);
         if (a == null || a.UserId != userId) return NotFound();
-        if (a == null) return NotFound();
 
         var resp = new UserAddressResponse
         {
@@ -151,30 +127,10 @@ public class UserController : ControllerBase
         var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
-        var a = await _addressRepo.GetByIdAsync(id);
+        var a = await _addressService.GetByIdAsync(id);
         if (a == null || a.UserId != userId) return NotFound();
 
-        if (req.IsPrimary == true)
-        {
-            var existingPrimary = await _addressRepo.GetByUserAsync(userId);
-            foreach (var e in existingPrimary.Where(x => x.IsPrimary && x.Id != id))
-            {
-                e.IsPrimary = false;
-                await _addressRepo.UpdateAsync(e);
-            }
-        }
-
-        if (req.AddressLine1 != null) a.AddressLine1 = req.AddressLine1;
-        if (req.AddressLine2 != null) a.AddressLine2 = req.AddressLine2;
-        if (req.City != null) a.City = req.City;
-        if (req.State != null) a.State = req.State;
-        if (req.PostalCode != null) a.PostalCode = req.PostalCode;
-        if (req.Country != null) a.Country = req.Country;
-        if (req.IsPrimary.HasValue) a.IsPrimary = req.IsPrimary.Value;
-
-        a.UpdatedAt = DateTime.UtcNow;
-
-        await _addressRepo.UpdateAsync(a);
+        await _addressService.UpdateAddressAsync(userId, id, req);
 
         return NoContent();
     }

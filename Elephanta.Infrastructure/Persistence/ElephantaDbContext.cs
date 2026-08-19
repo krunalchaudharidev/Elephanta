@@ -26,6 +26,14 @@ public class ElephantaDbContext : DbContext
 
     public DbSet<UserAddress> UserAddresses { get; set; } = null!;
 
+    public DbSet<Category> Categories { get; set; } = null!;
+
+    public DbSet<Product> Products { get; set; } = null!;
+
+    public DbSet<ProductImage> ProductImages { get; set; } = null!;
+
+    public DbSet<ProductReview> ProductReviews { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -35,5 +43,9 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
         modelBuilder.Entity<UserAddress>();
+        modelBuilder.Entity<Category>();
+        modelBuilder.Entity<Product>();
+        modelBuilder.Entity<ProductImage>();
+        modelBuilder.Entity<ProductReview>();
     }
 }
