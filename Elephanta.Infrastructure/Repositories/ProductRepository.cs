@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Elephanta.Application.Common;
 using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Domain.Entities;
 using Elephanta.Infrastructure.Persistence;
@@ -37,7 +34,7 @@ public class ProductRepository : IProductRepository
         return await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
     }
 
-    public async Task<Elephanta.Application.Common.PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize)
+    public async Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize)
     {
         var q = _db.Categories.AsQueryable();
         var total = await q.CountAsync();
@@ -64,12 +61,12 @@ public class ProductRepository : IProductRepository
         return await _db.Products.Include(p => p.Images).Include(p => p.Reviews).FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public async Task<Elephanta.Application.Common.PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize)
+    public async Task<PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize)
     {
         var q = _db.Products.Include(p => p.Images).Include(p => p.Reviews).AsQueryable();
         var total = await q.CountAsync();
         var items = await q.OrderByDescending(p => p.CreatedAt).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new Elephanta.Application.Common.PagedResult<Product> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
+        return new PagedResult<Product> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
     }
 
     // Images
@@ -121,7 +118,7 @@ public class ProductRepository : IProductRepository
     }
 
     // Search
-    public async Task<Elephanta.Application.Common.PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize)
+    public async Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize)
     {
         var q = _db.Products.Include(p => p.Images).Include(p => p.Reviews).AsQueryable();
 
@@ -143,6 +140,6 @@ public class ProductRepository : IProductRepository
 
         var total = await q.CountAsync();
         var items = await q.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new Elephanta.Application.Common.PagedResult<Product> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
+        return new PagedResult<Product> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
     }
 }

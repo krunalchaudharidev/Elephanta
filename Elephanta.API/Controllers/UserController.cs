@@ -1,18 +1,16 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using Elephanta.Application.Features.Authentication.DTOs;
-using Elephanta.Domain.Entities;
 using Elephanta.Application.Features.Authentication.Interfaces;
-using System.Linq;
+using Elephanta.Domain.Constants;
 
 namespace Elephanta.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
+[ApiExplorerSettings(GroupName = "User")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -24,7 +22,10 @@ public class UserController : ControllerBase
         _addressService = addressService;
     }
 
-    [Authorize]
+    /// <summary>
+    /// Update user profile. Requires authenticated User or Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserRequest req)
     {
@@ -48,11 +49,14 @@ public class UserController : ControllerBase
         return NoContent();
     }
 
-    [Authorize]
+    /// <summary>
+    /// Create a new address for the authenticated user. Requires authenticated User or Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
     [HttpPost("addresses")]
     public async Task<IActionResult> CreateAddress([FromBody] CreateUserAddressRequest req)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
         var addr = await _addressService.CreateAddressAsync(userId, req);
@@ -72,11 +76,14 @@ public class UserController : ControllerBase
         return CreatedAtAction(nameof(GetAddress), new { id = addr.Id }, resp);
     }
 
-    [Authorize]
+    /// <summary>
+    /// Get addresses for the authenticated user. Requires authenticated User or Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
     [HttpGet("addresses")]
     public async Task<IActionResult> GetAddresses()
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
         var list = await _addressService.GetByUserAsync(userId);
@@ -95,11 +102,14 @@ public class UserController : ControllerBase
         return Ok(resp);
     }
 
-    [Authorize]
+    /// <summary>
+    /// Get specific address by id for the authenticated user. Requires authenticated User or Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
     [HttpGet("addresses/{id}")]
     public async Task<IActionResult> GetAddress(Guid id)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
         var a = await _addressService.GetByIdAsync(id);
@@ -120,11 +130,14 @@ public class UserController : ControllerBase
         return Ok(resp);
     }
 
-    [Authorize]
+    /// <summary>
+    /// Update an address for the authenticated user. Requires authenticated User or Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
     [HttpPut("addresses/{id}")]
     public async Task<IActionResult> UpdateAddress(Guid id, [FromBody] UpdateUserAddressRequest req)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
 
         var a = await _addressService.GetByIdAsync(id);

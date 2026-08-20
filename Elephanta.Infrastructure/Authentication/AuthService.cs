@@ -1,10 +1,9 @@
-using System;
-using System.Threading.Tasks;
 using Elephanta.Application.Features.Authentication.Interfaces;
 using Elephanta.Application.Features.Authentication.DTOs;
 using Elephanta.Application.Features.Authentication.Services;
 using Elephanta.Domain.Entities;
 using Microsoft.Extensions.Configuration;
+using Elephanta.Domain.Constants;
 
 namespace Elephanta.Infrastructure.Authentication;
 
@@ -14,13 +13,15 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IConfiguration _configuration;
+    private readonly IRoleRepository _roleRepository;
 
-    public AuthService(IUserRepository userRepository, ITokenService tokenService, IRefreshTokenService refreshTokenService, IConfiguration configuration)
+    public AuthService(IUserRepository userRepository, ITokenService tokenService, IRefreshTokenService refreshTokenService, IConfiguration configuration, IRoleRepository roleRepository)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
         _refreshTokenService = refreshTokenService;
         _configuration = configuration;
+        _roleRepository = roleRepository;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest req)
@@ -40,6 +41,31 @@ public class AuthService : IAuthService
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
+
+        // Determine role to assign. Default to "User" if not provided.
+        var roleName = string.IsNullOrWhiteSpace(req.Role) ? Roles.User : req.Role.Trim();
+
+        // Prevent assigning privileged/forbidden roles during open registration.
+        var forbidden = _configuration.GetSection("Registration:ForbiddenRoles").Get<string[]>() ?? Array.Empty<string>();
+        foreach (var f in forbidden)
+        {
+            if (string.Equals(f, roleName, StringComparison.OrdinalIgnoreCase))
+            {
+                // fallback to safe default
+                roleName = Roles.User;
+                break;
+            }
+        }
+
+        var role = await _roleRepository.GetByNameAsync(roleName);
+        if (role == null)
+        {
+            role = new Role { Id = Guid.NewGuid(), Name = roleName };
+            role = await _roleRepository.AddAsync(role);
+        }
+
+        // Attach role to user via join entity so EF will persist the relationship when adding the user
+        user.UserRoles = new[] { new UserRole { UserId = user.Id, RoleId = role.Id } };
 
         await _userRepository.AddAsync(user);
 

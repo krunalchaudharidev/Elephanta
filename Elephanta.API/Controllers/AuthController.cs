@@ -1,12 +1,7 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Elephanta.Application.Features.Authentication.DTOs;
 using Elephanta.Application.Features.Authentication.Interfaces;
-using Elephanta.Application.Features.Authentication.Services;
-using Elephanta.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace Elephanta.API.Controllers;
 

@@ -1,12 +1,9 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Elephanta.Domain.Constants;
 using Elephanta.Application.Features.Catalog.DTOs;
 using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Domain.Entities;
-using System.Collections.Generic;
 
 namespace Elephanta.API.Controllers;
 
@@ -22,7 +19,11 @@ public class ProductController : ControllerBase
     }
 
     // Categories
-    [Authorize]
+    /// <summary>
+    /// Requires Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
     [HttpPost("categories")]
     public async Task<IActionResult> AddCategory([FromBody] CategoryRequest req)
     {
@@ -56,7 +57,11 @@ public class ProductController : ControllerBase
         return CreatedAtAction(nameof(GetCategory), new { id = resp.Id }, resp);
     }
 
-    [Authorize]
+    /// <summary>
+    /// Requires Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
     [HttpPut("categories/{id}")]
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] CategoryRequest req)
     {
@@ -123,7 +128,11 @@ public class ProductController : ControllerBase
     }
 
     // Products
-    [Authorize]
+    /// <summary>
+    /// Requires Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
     [HttpPost("products")]
     public async Task<IActionResult> AddProduct([FromBody] ProductRequest req)
     {
@@ -167,7 +176,11 @@ public class ProductController : ControllerBase
         return CreatedAtAction(nameof(GetProduct), new { id = resp.Id }, resp);
     }
 
-    [Authorize]
+    /// <summary>
+    /// Requires Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
     [HttpPut("products/{id}")]
     public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] ProductRequest req)
     {
@@ -251,7 +264,11 @@ public class ProductController : ControllerBase
     }
 
     // Images
-    [Authorize]
+    /// <summary>
+    /// Requires Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
     [HttpPost("products/{productId}/images")]
     public async Task<IActionResult> AddImage(Guid productId, [FromBody] ProductImageRequest req)
     {
@@ -270,7 +287,11 @@ public class ProductController : ControllerBase
         return CreatedAtAction(nameof(GetImage), new { id = resp.Id }, resp);
     }
 
-    [Authorize]
+    /// <summary>
+    /// Requires Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
     [HttpPut("products/images/{id}")]
     public async Task<IActionResult> UpdateImage(Guid id, [FromBody] ProductImageRequest req)
     {
@@ -302,7 +323,11 @@ public class ProductController : ControllerBase
     }
 
     // Reviews
-    [Authorize]
+    /// <summary>
+    /// Requires authenticated User or Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
+    [ApiExplorerSettings(GroupName = "User")]
     [HttpPost("products/{productId}/reviews")]
     public async Task<IActionResult> AddReview(Guid productId, [FromBody] ProductReviewRequest req)
     {
@@ -312,7 +337,11 @@ public class ProductController : ControllerBase
         return CreatedAtAction(nameof(GetReview), new { id = resp.Id }, resp);
     }
 
-    [Authorize]
+    /// <summary>
+    /// Requires authenticated User or Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
+    [ApiExplorerSettings(GroupName = "User")]
     [HttpPut("products/reviews/{id}")]
     public async Task<IActionResult> UpdateReview(Guid id, [FromBody] ProductReviewRequest req)
     {

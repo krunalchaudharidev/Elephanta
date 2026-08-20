@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Elephanta.Domain.Entities;
 using Elephanta.Infrastructure.Persistence.Configurations;
+using Elephanta.Domain.Common;
 
 namespace Elephanta.Infrastructure.Persistence;
 
@@ -47,5 +48,36 @@ public class ElephantaDbContext : DbContext
         modelBuilder.Entity<Product>();
         modelBuilder.Entity<ProductImage>();
         modelBuilder.Entity<ProductReview>();
+    }
+
+    public override int SaveChanges()
+    {
+        ApplyTimestamps();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        ApplyTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void ApplyTimestamps()
+    {
+        var utcNow = DateTime.UtcNow;
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (entry.Entity.CreatedAt == default)
+                    entry.Entity.CreatedAt = utcNow;
+
+                entry.Entity.UpdatedAt = null;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = utcNow;
+            }
+        }
     }
 }
