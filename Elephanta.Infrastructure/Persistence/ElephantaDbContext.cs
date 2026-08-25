@@ -37,6 +37,7 @@ public class ElephantaDbContext : DbContext
 
     public DbSet<Offer> Offers { get; set; } = null!;
     public DbSet<OfferImage> OfferImages { get; set; } = null!;
+    public DbSet<CartItem> CartItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,11 +47,13 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new CartItemConfiguration());
         modelBuilder.ApplyConfiguration(new OfferConfiguration());
         modelBuilder.ApplyConfiguration(new OfferImageConfiguration());
         modelBuilder.Entity<UserAddress>();
         modelBuilder.Entity<Category>();
         modelBuilder.Entity<Product>();
+        modelBuilder.Entity<CartItem>();
         modelBuilder.Entity<ProductImage>();
         modelBuilder.Entity<ProductReview>();
     }

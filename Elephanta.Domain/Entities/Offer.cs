@@ -28,4 +28,7 @@ public class Offer : BaseEntity
     public int UsageCount { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    // Navigation
+    public ICollection<OfferImage> Images { get; set; } = new List<OfferImage>();
 }

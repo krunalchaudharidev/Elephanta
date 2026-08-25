@@ -17,7 +17,7 @@ public class OfferImageConfiguration : IEntityTypeConfiguration<OfferImage>
             .HasMaxLength(1000);
 
         builder.HasOne(x => x.Offer)
-            .WithMany() // Offer does not have collection property yet
+            .WithMany(o => o.Images)
             .HasForeignKey(x => x.OfferId)
             .OnDelete(DeleteBehavior.Cascade);
     }
