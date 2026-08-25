@@ -1,4 +1,5 @@
 using System.Text;
+using Elephanta.API.Data;
 using Elephanta.Domain.Constants;
 using Elephanta.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -146,10 +147,8 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var config = services.GetRequiredService<IConfiguration>();
 
-    // Static admin password defined in code. Change this value for production.
-    var adminPassword = "Admin@12345";
-
-    await Elephanta.API.Data.DataSeeder.SeedAsync(services, config, adminPassword);
+    // Seed using centralized DataSeeder which reads admin password from configuration.
+    await DataSeeder.SeedAsync(services, config);
 }
 
 app.MapControllers();

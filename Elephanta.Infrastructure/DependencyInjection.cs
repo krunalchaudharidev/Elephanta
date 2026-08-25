@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Elephanta.Application.Features.Authentication.Interfaces;
 using Elephanta.Infrastructure.Authentication;
 using Elephanta.Infrastructure.Repositories;
+using Elephanta.Application.Features.Offers.Interfaces;
 using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Infrastructure.Services;
 
@@ -16,11 +17,13 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserAddressRepository, UserAddressRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IOfferRepository, OfferRepository>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUserAddressService, UserAddressService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IOfferService, OfferService>();
 
         return services;
     }

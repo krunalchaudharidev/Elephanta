@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Elephanta.Application.Features.Authentication.DTOs;
 using Elephanta.Application.Features.Authentication.Interfaces;
 using Elephanta.Domain.Constants;
+using Elephanta.Application.Features.Authentication.Services;
 
 namespace Elephanta.API.Controllers;
 
@@ -20,6 +21,35 @@ public class UserController : ControllerBase
     {
         _userService = userService;
         _addressService = addressService;
+    }
+
+    // Validate password strength. Returns list of error messages (empty if valid).
+    private static List<string> ValidatePassword(string? password)
+    {
+        var errors = new List<string>();
+        if (string.IsNullOrEmpty(password))
+        {
+            errors.Add("Password is required.");
+            return errors;
+        }
+
+        if (password.Length < 8)
+            errors.Add("Password must be at least 8 characters long.");
+
+        if (!password.Any(char.IsUpper))
+            errors.Add("Password must contain at least one uppercase letter.");
+
+        if (!password.Any(char.IsLower))
+            errors.Add("Password must contain at least one lowercase letter.");
+
+        if (!password.Any(char.IsDigit))
+            errors.Add("Password must contain at least one digit.");
+
+        const string special = "!@#$%^&*()-_+=[]{}|;:'\",.<>?/~`\\";
+        if (!password.Any(c => special.Contains(c)))
+            errors.Add("Password must contain at least one special character (e.g. !@#$%).");
+
+        return errors;
     }
 
     /// <summary>
@@ -46,6 +76,54 @@ public class UserController : ControllerBase
 
         await _userService.UpdateAsync(user);
 
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Change password for the authenticated user. Requires current (old) password.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
+    {
+        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+
+        var user = await _userService.GetByIdAsync(userId);
+        if (user == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(req.OldPassword)) return BadRequest(new { message = "OldPassword is required" });
+
+        if (!PasswordHasher.Verify(req.OldPassword, user.PasswordHash)) return Unauthorized(new { message = "Current password is incorrect" });
+        var validationErrors = ValidatePassword(req.NewPassword);
+        if (validationErrors.Any()) return BadRequest(new { errors = validationErrors });
+
+        user.PasswordHash = PasswordHasher.Hash(req.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userService.UpdateAsync(user);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Reset another user's password (admin only).
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HttpPut("users/{id}/password")]
+    public async Task<IActionResult> AdminResetPassword(Guid id, [FromBody] ChangePasswordRequest req)
+    {
+        var user = await _userService.GetByIdAsync(id);
+        if (user == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(req.NewPassword)) return BadRequest(new { message = "NewPassword is required" });
+
+        var validationErrors = ValidatePassword(req.NewPassword);
+        if (validationErrors.Any()) return BadRequest(new { errors = validationErrors });
+
+        user.PasswordHash = PasswordHasher.Hash(req.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userService.UpdateAsync(user);
         return NoContent();
     }
 

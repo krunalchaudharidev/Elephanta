@@ -11,7 +11,7 @@ namespace Elephanta.API.Data;
 
 public static class DataSeeder
 {
-    public static async Task SeedAsync(IServiceProvider serviceProvider, IConfiguration config, string adminPassword)
+    public static async Task SeedAsync(IServiceProvider serviceProvider, IConfiguration config)
     {
         var roleRepo = serviceProvider.GetRequiredService<IRoleRepository>();
         var userRepo = serviceProvider.GetRequiredService<IUserRepository>();
@@ -26,10 +26,11 @@ public static class DataSeeder
             }
         }
 
-        // Admin user seeding using provided static password
+        // Admin user seeding using password from configuration
         var adminEmail = config["Registration:AdminUser:Email"] ?? "admin@elephanta.local";
         var adminFirstName = config["Registration:AdminUser:FirstName"] ?? "Admin";
         var adminLastName = config["Registration:AdminUser:LastName"] ?? "User";
+        var adminPassword = config["Registration:AdminUser:Password"];
 
         if (!string.IsNullOrWhiteSpace(adminPassword))
         {
