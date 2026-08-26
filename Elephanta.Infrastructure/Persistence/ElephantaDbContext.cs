@@ -34,6 +34,7 @@ public class ElephantaDbContext : DbContext
     public DbSet<ProductImage> ProductImages { get; set; } = null!;
 
     public DbSet<ProductReview> ProductReviews { get; set; } = null!;
+    public DbSet<ProductFaq> ProductFaqs { get; set; } = null!;
 
     public DbSet<Offer> Offers { get; set; } = null!;
     public DbSet<OfferImage> OfferImages { get; set; } = null!;

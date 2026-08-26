@@ -4,6 +4,8 @@ using Elephanta.Domain.Constants;
 using Elephanta.Application.Features.Catalog.DTOs;
 using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Domain.Entities;
+using Elephanta.Application.Features.ProductFaqs.DTOs;
+using Elephanta.Application.Features.ProductFaqs.Interfaces;
 
 namespace Elephanta.API.Controllers;
 
@@ -12,10 +14,12 @@ namespace Elephanta.API.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly IProductService _service;
+    private readonly IProductFaqService _faqService;
 
-    public ProductController(IProductService service)
+    public ProductController(IProductService service, IProductFaqService faqService)
     {
         _service = service;
+        _faqService = faqService;
     }
 
     // Categories
@@ -124,6 +128,103 @@ public class ProductController : ControllerBase
             IsActive = c.IsActive,
             ParentCategoryId = c.ParentCategoryId
         };
+        return Ok(resp);
+    }
+
+    // FAQs
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
+    [HttpPost("products/{productId}/faqs")]
+    public async Task<IActionResult> AddFaq(Guid productId, [FromBody] ProductFaqRequest req)
+    {
+        var f = new ProductFaq
+        {
+            Id = Guid.NewGuid(),
+            ProductId = productId,
+            Question = req.Question,
+            Answer = req.Answer,
+            IsActive = req.IsActive,
+            DisplayOrder = req.DisplayOrder,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var added = await _faqService.AddFaqAsync(f);
+        var resp = new ProductFaqResponse
+        {
+            Id = added.Id,
+            ProductId = added.ProductId,
+            Question = added.Question,
+            Answer = added.Answer,
+            IsActive = added.IsActive,
+            DisplayOrder = added.DisplayOrder
+        };
+
+        return CreatedAtAction(nameof(GetFaq), new { id = resp.Id }, resp);
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
+    [HttpPut("products/faqs/{id}")]
+    public async Task<IActionResult> UpdateFaq(Guid id, [FromBody] ProductFaqRequest req)
+    {
+        var existing = await _faqService.GetFaqByIdAsync(id);
+        if (existing == null) return NotFound();
+
+        existing.Question = req.Question;
+        existing.Answer = req.Answer;
+        existing.IsActive = req.IsActive;
+        existing.DisplayOrder = req.DisplayOrder;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await _faqService.UpdateFaqAsync(existing);
+        return NoContent();
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
+    [HttpDelete("products/faqs/{id}")]
+    public async Task<IActionResult> DeleteFaq(Guid id)
+    {
+        var existing = await _faqService.GetFaqByIdAsync(id);
+        if (existing == null) return NotFound();
+
+        await _faqService.DeleteFaqAsync(id);
+        return NoContent();
+    }
+
+    [HttpGet("products/{productId}/faqs")]
+    public async Task<IActionResult> GetFaqs(Guid productId)
+    {
+        var list = await _faqService.GetFaqsByProductAsync(productId);
+        var resp = list.Select(f => new ProductFaqResponse
+        {
+            Id = f.Id,
+            ProductId = f.ProductId,
+            Question = f.Question,
+            Answer = f.Answer,
+            IsActive = f.IsActive,
+            DisplayOrder = f.DisplayOrder
+        }).ToList();
+
+        return Ok(resp);
+    }
+
+    [HttpGet("products/faqs/{id}")]
+    public async Task<IActionResult> GetFaq(Guid id)
+    {
+        var f = await _faqService.GetFaqByIdAsync(id);
+        if (f == null) return NotFound();
+
+        var resp = new ProductFaqResponse
+        {
+            Id = f.Id,
+            ProductId = f.ProductId,
+            Question = f.Question,
+            Answer = f.Answer,
+            IsActive = f.IsActive,
+            DisplayOrder = f.DisplayOrder
+        };
+
         return Ok(resp);
     }
 

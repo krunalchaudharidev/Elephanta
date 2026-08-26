@@ -37,4 +37,6 @@ public class Product : BaseEntity
 
     public ICollection<ProductReview> Reviews { get; set; }
         = new List<ProductReview>();
+
+    public ICollection<ProductFaq> Faqs { get; set; } = new List<ProductFaq>();
 }
