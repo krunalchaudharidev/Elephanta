@@ -127,14 +127,16 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Elephanta API V1");
-        // Serve the Swagger UI at application root
-        c.RoutePrefix = string.Empty;
-    });
 }
+
+// I will move this(Swagger) to the development condition after it goes live in production.
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Elephanta API V1");
+    // Serve the Swagger UI at application root
+    c.RoutePrefix = string.Empty;
+});
 
 app.UseHttpsRedirection();
 
