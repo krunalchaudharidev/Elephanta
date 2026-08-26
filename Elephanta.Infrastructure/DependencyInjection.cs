@@ -4,6 +4,7 @@ using Elephanta.Infrastructure.Authentication;
 using Elephanta.Infrastructure.Repositories;
 using Elephanta.Application.Features.Offers.Interfaces;
 using Elephanta.Application.Features.Catalog.Interfaces;
+using Elephanta.Application.Features.Cart.Interfaces;
 using Elephanta.Infrastructure.Services;
 
 namespace Elephanta.Infrastructure;
@@ -24,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IUserAddressService, UserAddressService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IOfferService, OfferService>();
+        services.AddScoped<ICartService, CartService>();
 
         return services;
     }
