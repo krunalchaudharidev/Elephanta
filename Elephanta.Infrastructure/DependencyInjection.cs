@@ -5,6 +5,7 @@ using Elephanta.Infrastructure.Repositories;
 using Elephanta.Application.Features.Offers.Interfaces;
 using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Application.Features.ProductFaqs.Interfaces;
+using Elephanta.Application.Features.Support.Interfaces;
 using Elephanta.Application.Features.Cart.Interfaces;
 using Elephanta.Infrastructure.Services;
 
@@ -28,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IOfferService, OfferService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IProductFaqService, ProductFaqService>();
+        services.AddScoped<ICustomerSupportService, CustomerSupportService>();
 
         return services;
     }

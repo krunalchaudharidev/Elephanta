@@ -35,6 +35,7 @@ public class ElephantaDbContext : DbContext
 
     public DbSet<ProductReview> ProductReviews { get; set; } = null!;
     public DbSet<ProductFaq> ProductFaqs { get; set; } = null!;
+    public DbSet<CustomerSupportRequest> CustomerSupportRequests { get; set; } = null!;
 
     public DbSet<Offer> Offers { get; set; } = null!;
     public DbSet<OfferImage> OfferImages { get; set; } = null!;
@@ -51,10 +52,14 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CartItemConfiguration());
         modelBuilder.ApplyConfiguration(new OfferConfiguration());
         modelBuilder.ApplyConfiguration(new OfferImageConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductFaqConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerSupportRequestConfiguration());
         modelBuilder.Entity<UserAddress>();
         modelBuilder.Entity<Category>();
         modelBuilder.Entity<Product>();
         modelBuilder.Entity<CartItem>();
+        modelBuilder.Entity<ProductFaq>();
+        modelBuilder.Entity<CustomerSupportRequest>();
         modelBuilder.Entity<ProductImage>();
         modelBuilder.Entity<ProductReview>();
     }
