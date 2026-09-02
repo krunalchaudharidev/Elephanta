@@ -12,6 +12,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+// Configure CORS to allow the frontend to call this API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Elephanta.Web", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 // Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -139,6 +150,9 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
+
+// Enable CORS for the configured policy so preflight requests succeed
+app.UseCors("Elephanta.Web");
 
 app.UseAuthentication();
 app.UseAuthorization();

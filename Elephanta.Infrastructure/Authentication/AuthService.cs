@@ -76,7 +76,20 @@ public class AuthService : IAuthService
         var expiresMinutes = 60;
         if (!string.IsNullOrEmpty(expiresMinutesText) && int.TryParse(expiresMinutesText, out var parsed)) expiresMinutes = parsed;
 
-        return new AuthResponse { AccessToken = access, RefreshToken = refresh.Token, ExpiresAt = DateTime.UtcNow.AddMinutes(expiresMinutes) };
+        // Build user info to return
+        var nameParts = new[] { user.FirstName, user.MiddleName, user.LastName }
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToArray();
+
+        var userInfo = new UserInfo
+        {
+            Id = user.Id,
+            Name = nameParts.Length == 0 ? string.Empty : string.Join(' ', nameParts),
+            Email = user.Email,
+            Roles = user.UserRoles?.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList() ?? new List<string>()
+        };
+
+        return new AuthResponse { AccessToken = access, RefreshToken = refresh.Token, ExpiresAt = DateTime.UtcNow.AddMinutes(expiresMinutes), User = userInfo };
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest req)
@@ -97,7 +110,20 @@ public class AuthService : IAuthService
         var expiresMinutes = 60;
         if (!string.IsNullOrEmpty(expiresMinutesText) && int.TryParse(expiresMinutesText, out var parsed)) expiresMinutes = parsed;
 
-        return new AuthResponse { AccessToken = access, RefreshToken = refresh.Token, ExpiresAt = DateTime.UtcNow.AddMinutes(expiresMinutes) };
+        // Build user info to return
+        var nameParts = new[] { user.FirstName, user.MiddleName, user.LastName }
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToArray();
+
+        var userInfo = new UserInfo
+        {
+            Id = user.Id,
+            Name = nameParts.Length == 0 ? string.Empty : string.Join(' ', nameParts),
+            Email = user.Email,
+            Roles = user.UserRoles?.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList() ?? new List<string>()
+        };
+
+        return new AuthResponse { AccessToken = access, RefreshToken = refresh.Token, ExpiresAt = DateTime.UtcNow.AddMinutes(expiresMinutes), User = userInfo };
     }
 
     public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
@@ -117,7 +143,20 @@ public class AuthService : IAuthService
         var expiresMinutes = 60;
         if (!string.IsNullOrEmpty(expiresMinutesText) && int.TryParse(expiresMinutesText, out var parsed)) expiresMinutes = parsed;
 
-        return new AuthResponse { AccessToken = access, RefreshToken = refresh.Token, ExpiresAt = DateTime.UtcNow.AddMinutes(expiresMinutes) };
+        // Build user info to return
+        var nameParts = new[] { user.FirstName, user.MiddleName, user.LastName }
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToArray();
+
+        var userInfo = new UserInfo
+        {
+            Id = user.Id,
+            Name = nameParts.Length == 0 ? string.Empty : string.Join(' ', nameParts),
+            Email = user.Email,
+            Roles = user.UserRoles?.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList() ?? new List<string>()
+        };
+
+        return new AuthResponse { AccessToken = access, RefreshToken = refresh.Token, ExpiresAt = DateTime.UtcNow.AddMinutes(expiresMinutes), User = userInfo };
     }
 
     public async Task LogoutAsync(string refreshToken)
