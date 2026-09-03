@@ -5,6 +5,7 @@ using Elephanta.Application.Features.Authentication.DTOs;
 using Elephanta.Application.Features.Authentication.Interfaces;
 using Elephanta.Domain.Constants;
 using Elephanta.Application.Features.Authentication.Services;
+using Elephanta.API.Models;
 
 namespace Elephanta.API.Controllers;
 
@@ -61,10 +62,11 @@ public class UserController : ControllerBase
     {
         // get user id from token 'sub' claim
         var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId))
+            return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
         var user = await _userService.GetByIdAsync(userId);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound(new ApiResponse(false, "User not found"));
 
         // apply updates
         if (req.FirstName != null) user.FirstName = req.FirstName;
@@ -76,7 +78,7 @@ public class UserController : ControllerBase
 
         await _userService.UpdateAsync(user);
 
-        return NoContent();
+        return Ok(new ApiResponse(true, "Profile updated successfully"));
     }
 
     /// <summary>
@@ -87,22 +89,27 @@ public class UserController : ControllerBase
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
     {
         var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId))
+            return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
         var user = await _userService.GetByIdAsync(userId);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound(new ApiResponse(false, "User not found"));
 
-        if (string.IsNullOrWhiteSpace(req.OldPassword)) return BadRequest(new { message = "OldPassword is required" });
+        if (string.IsNullOrWhiteSpace(req.OldPassword))
+            return BadRequest(new ApiResponse(false, "OldPassword is required"));
 
-        if (!PasswordHasher.Verify(req.OldPassword, user.PasswordHash)) return Unauthorized(new { message = "Current password is incorrect" });
+        if (!PasswordHasher.Verify(req.OldPassword, user.PasswordHash))
+            return Unauthorized(new ApiResponse(false, "Current password is incorrect"));
+
         var validationErrors = ValidatePassword(req.NewPassword);
-        if (validationErrors.Any()) return BadRequest(new { errors = validationErrors });
+        if (validationErrors.Any())
+            return BadRequest(new ApiResponse(false, string.Join("; ", validationErrors)));
 
         user.PasswordHash = PasswordHasher.Hash(req.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userService.UpdateAsync(user);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Password changed successfully"));
     }
 
     /// <summary>
@@ -113,18 +120,20 @@ public class UserController : ControllerBase
     public async Task<IActionResult> AdminResetPassword(Guid id, [FromBody] ChangePasswordRequest req)
     {
         var user = await _userService.GetByIdAsync(id);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound(new ApiResponse(false, "User not found"));
 
-        if (string.IsNullOrWhiteSpace(req.NewPassword)) return BadRequest(new { message = "NewPassword is required" });
+        if (string.IsNullOrWhiteSpace(req.NewPassword))
+            return BadRequest(new ApiResponse(false, "NewPassword is required"));
 
         var validationErrors = ValidatePassword(req.NewPassword);
-        if (validationErrors.Any()) return BadRequest(new { errors = validationErrors });
+        if (validationErrors.Any())
+            return BadRequest(new ApiResponse(false, string.Join("; ", validationErrors)));
 
         user.PasswordHash = PasswordHasher.Hash(req.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userService.UpdateAsync(user);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Password reset successfully"));
     }
 
     /// <summary>
@@ -216,13 +225,14 @@ public class UserController : ControllerBase
     public async Task<IActionResult> UpdateAddress(Guid id, [FromBody] UpdateUserAddressRequest req)
     {
         var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId))
+            return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
         var a = await _addressService.GetByIdAsync(id);
-        if (a == null || a.UserId != userId) return NotFound();
+        if (a == null || a.UserId != userId) return NotFound(new ApiResponse(false, "Address not found"));
 
         await _addressService.UpdateAddressAsync(userId, id, req);
 
-        return NoContent();
+        return Ok(new ApiResponse(true, "Address updated successfully"));
     }
 }
