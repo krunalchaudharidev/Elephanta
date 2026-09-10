@@ -42,4 +42,6 @@ public class CategoryResponse
     public bool IsActive { get; set; }
 
     public Guid? ParentCategoryId { get; set; }
+
+    public string? ParentCategoryName { get; set; }
 }

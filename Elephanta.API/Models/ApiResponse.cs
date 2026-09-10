@@ -1,3 +1,5 @@
+using System;
+
 namespace Elephanta.API.Models
 {
     // Standard API response wrapper used by controllers.
@@ -5,6 +7,7 @@ namespace Elephanta.API.Models
     {
         public bool IsSuccess { get; set; }
         public string Message { get; set; } = string.Empty;
+        public Guid Id { get; set; } = Guid.Empty;
 
         public ApiResponse()
         {
@@ -14,6 +17,13 @@ namespace Elephanta.API.Models
         {
             IsSuccess = isSuccess;
             Message = message;
+        }
+
+        public ApiResponse(bool isSuccess, string message, Guid id)
+        {
+            IsSuccess = isSuccess;
+            Message = message;
+            Id = id;
         }
     }
 }

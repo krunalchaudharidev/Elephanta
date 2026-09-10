@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Elephanta.API.Helpers;
 using Elephanta.Application.Features.Authentication.DTOs;
 using Elephanta.Application.Features.Authentication.Interfaces;
 using Elephanta.Domain.Constants;
@@ -60,12 +62,10 @@ public class UserController : ControllerBase
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserRequest req)
     {
-        // get user id from token 'sub' claim
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId))
-            return Unauthorized(new ApiResponse(false, "Unauthorized"));
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
-        var user = await _userService.GetByIdAsync(userId);
+        var user = await _userService.GetByIdAsync(userId.Value);
         if (user == null) return NotFound(new ApiResponse(false, "User not found"));
 
         // apply updates
@@ -88,11 +88,10 @@ public class UserController : ControllerBase
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
     {
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId))
-            return Unauthorized(new ApiResponse(false, "Unauthorized"));
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
-        var user = await _userService.GetByIdAsync(userId);
+        var user = await _userService.GetByIdAsync(userId.Value);
         if (user == null) return NotFound(new ApiResponse(false, "User not found"));
 
         if (string.IsNullOrWhiteSpace(req.OldPassword))
@@ -137,16 +136,54 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// Get current authenticated user's basic information.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
+
+        var user = await _userService.GetByIdAsync(userId.Value);
+        if (user == null) return NotFound(new ApiResponse(false, "User not found"));
+
+        var firstName = user.FirstName;
+        var middleName = user.MiddleName;
+        var lastName = user.LastName;
+
+        var roles = user.UserRoles?
+            .Select(ur => ur.Role?.Name)
+            .Where(r => !string.IsNullOrWhiteSpace(r))
+            .Select(r => r!)
+            .Distinct()
+            .ToList() ?? new List<string>();
+
+        var resp = new UserResponse
+        {
+            Id = user.Id,
+            FirstName = firstName,
+            MiddleName = middleName,
+            LastName = lastName,
+            PhoneNumber = user.PhoneNumber,
+            Email = user.Email,
+            Roles = roles
+        };
+
+        return Ok(resp);
+    }
+
+    /// <summary>
     /// Create a new address for the authenticated user. Requires authenticated User or Admin role.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
     [HttpPost("addresses")]
     public async Task<IActionResult> CreateAddress([FromBody] CreateUserAddressRequest req)
     {
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
-        var addr = await _addressService.CreateAddressAsync(userId, req);
+        var addr = await _addressService.CreateAddressAsync(userId.Value, req);
 
         var resp = new UserAddressResponse
         {
@@ -170,11 +207,11 @@ public class UserController : ControllerBase
     [HttpGet("addresses")]
     public async Task<IActionResult> GetAddresses()
     {
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
-        var list = await _addressService.GetByUserAsync(userId);
-        var resp = list.Select(a => new UserAddressResponse
+        var addrs = await _addressService.GetByUserAsync(userId.Value);
+        var resp = addrs.Select(a => new UserAddressResponse
         {
             Id = a.Id,
             AddressLine1 = a.AddressLine1,
@@ -196,22 +233,22 @@ public class UserController : ControllerBase
     [HttpGet("addresses/{id}")]
     public async Task<IActionResult> GetAddress(Guid id)
     {
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
-        var a = await _addressService.GetByIdAsync(id);
-        if (a == null || a.UserId != userId) return NotFound();
+        var addr = await _addressService.GetByIdAsync(id);
+        if (addr == null || addr.UserId != userId.Value) return NotFound(new ApiResponse(false, "Address not found"));
 
         var resp = new UserAddressResponse
         {
-            Id = a.Id,
-            AddressLine1 = a.AddressLine1,
-            AddressLine2 = a.AddressLine2,
-            City = a.City,
-            State = a.State,
-            PostalCode = a.PostalCode,
-            Country = a.Country,
-            IsPrimary = a.IsPrimary
+            Id = addr.Id,
+            AddressLine1 = addr.AddressLine1,
+            AddressLine2 = addr.AddressLine2,
+            City = addr.City,
+            State = addr.State,
+            PostalCode = addr.PostalCode,
+            Country = addr.Country,
+            IsPrimary = addr.IsPrimary
         };
 
         return Ok(resp);
@@ -224,14 +261,13 @@ public class UserController : ControllerBase
     [HttpPut("addresses/{id}")]
     public async Task<IActionResult> UpdateAddress(Guid id, [FromBody] UpdateUserAddressRequest req)
     {
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId))
-            return Unauthorized(new ApiResponse(false, "Unauthorized"));
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
 
         var a = await _addressService.GetByIdAsync(id);
-        if (a == null || a.UserId != userId) return NotFound(new ApiResponse(false, "Address not found"));
+        if (a == null || a.UserId != userId.Value) return NotFound(new ApiResponse(false, "Address not found"));
 
-        await _addressService.UpdateAddressAsync(userId, id, req);
+        await _addressService.UpdateAddressAsync(userId.Value, id, req);
 
         return Ok(new ApiResponse(true, "Address updated successfully"));
     }

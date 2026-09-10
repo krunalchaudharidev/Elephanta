@@ -35,4 +35,8 @@ public class ProductService : IProductService
 
     public Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize)
         => _repo.SearchProductsAsync(name, minPrice, maxPrice, categoryId, sort, isActive, pageNumber, pageSize);
+
+    public Task<bool> CategoryHasChildrenAsync(Guid categoryId) => _repo.CategoryHasChildrenAsync(categoryId);
+    public Task<bool> IsCategoryLinkedToProductsAsync(Guid categoryId) => _repo.IsCategoryLinkedToProductsAsync(categoryId);
+    public Task DeleteCategoryAsync(Guid categoryId) => _repo.DeleteCategoryAsync(categoryId);
 }

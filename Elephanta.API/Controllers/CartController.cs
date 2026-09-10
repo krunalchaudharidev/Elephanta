@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Elephanta.Domain.Constants;
+using Elephanta.API.Helpers;
 using Elephanta.Application.Features.Cart.DTOs;
 using Elephanta.Application.Features.Cart.Interfaces;
 using Elephanta.Domain.Entities;
@@ -23,19 +24,19 @@ public class CartController : ControllerBase
     [HttpPost("items")]
     public async Task<IActionResult> AddItem([FromBody] CartItemRequest req)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized();
 
         if (req.Quantity <= 0) return BadRequest(new { message = "Quantity must be greater than zero" });
 
         // ensure product exists
-        var product = (await _service.GetItemsByUserAsync(userId)).FirstOrDefault()?.Product;
+        var product = (await _service.GetItemsByUserAsync(userId.Value)).FirstOrDefault()?.Product;
         // above is just to keep parity; better to fetch product in service if needed. We'll set unit price in service based on product data.
 
         var item = new CartItem
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            UserId = userId.Value,
             ProductId = req.ProductId,
             Quantity = req.Quantity,
             CreatedAt = DateTime.UtcNow
@@ -58,13 +59,13 @@ public class CartController : ControllerBase
     [HttpPut("items/{id}")]
     public async Task<IActionResult> UpdateItem(Guid id, [FromBody] UpdateCartItemRequest req)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized();
 
         if (req.Quantity <= 0) return BadRequest(new { message = "Quantity must be greater than zero" });
 
         var existing = await _service.GetItemByIdAsync(id);
-        if (existing == null || existing.UserId != userId) return NotFound();
+        if (existing == null || existing.UserId != userId.Value) return NotFound();
 
         existing.Quantity = req.Quantity;
         existing.UpdatedAt = DateTime.UtcNow;
@@ -76,11 +77,11 @@ public class CartController : ControllerBase
     [HttpDelete("items/{id}")]
     public async Task<IActionResult> DeleteItem(Guid id)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized();
 
         var existing = await _service.GetItemByIdAsync(id);
-        if (existing == null || existing.UserId != userId) return NotFound();
+        if (existing == null || existing.UserId != userId.Value) return NotFound();
 
         await _service.DeleteItemAsync(id);
         return NoContent();
@@ -89,10 +90,10 @@ public class CartController : ControllerBase
     [HttpGet("items")]
     public async Task<IActionResult> GetItems([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized();
 
-        var paged = await _service.GetItemsByUserAsync(userId, pageNumber, pageSize);
+        var paged = await _service.GetItemsByUserAsync(userId.Value, pageNumber, pageSize);
         var items = paged.Items.Select(c => new CartItemResponse
         {
             Id = c.Id,
@@ -116,11 +117,11 @@ public class CartController : ControllerBase
     [HttpGet("items/{id}")]
     public async Task<IActionResult> GetItem(Guid id)
     {
-        var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized();
 
         var c = await _service.GetItemByIdAsync(id);
-        if (c == null || c.UserId != userId) return NotFound();
+        if (c == null || c.UserId != userId.Value) return NotFound();
 
         var resp = new CartItemResponse
         {

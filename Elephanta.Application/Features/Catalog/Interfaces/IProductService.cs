@@ -34,4 +34,9 @@ public interface IProductService
 
     // Search
     Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize);
+
+    // Category relationship / deletion helpers
+    Task<bool> CategoryHasChildrenAsync(Guid categoryId);
+    Task<bool> IsCategoryLinkedToProductsAsync(Guid categoryId);
+    Task DeleteCategoryAsync(Guid categoryId);
 }

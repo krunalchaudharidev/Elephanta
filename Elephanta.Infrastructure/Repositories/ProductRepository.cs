@@ -142,4 +142,23 @@ public class ProductRepository : IProductRepository
         var items = await q.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
         return new PagedResult<Product> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
     }
+
+    // Category relationship helpers
+    public async Task<bool> CategoryHasChildrenAsync(Guid categoryId)
+    {
+        return await _db.Categories.AnyAsync(c => c.ParentCategoryId == categoryId);
+    }
+
+    public async Task<bool> IsCategoryLinkedToProductsAsync(Guid categoryId)
+    {
+        return await _db.Products.AnyAsync(p => p.CategoryId == categoryId);
+    }
+
+    public async Task DeleteCategoryAsync(Guid categoryId)
+    {
+        var c = await _db.Categories.FirstOrDefaultAsync(x => x.Id == categoryId);
+        if (c == null) return;
+        _db.Categories.Remove(c);
+        await _db.SaveChangesAsync();
+    }
 }

@@ -6,6 +6,7 @@ using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Domain.Entities;
 using Elephanta.Application.Features.ProductFaqs.DTOs;
 using Elephanta.Application.Features.ProductFaqs.Interfaces;
+using Elephanta.API.Models;
 
 namespace Elephanta.API.Controllers;
 
@@ -58,7 +59,7 @@ public class ProductController : ControllerBase
             ParentCategoryId = added.ParentCategoryId
         };
 
-        return CreatedAtAction(nameof(GetCategory), new { id = resp.Id }, resp);
+        return Ok(new ApiResponse(true, "Category added successfully", added.Id));
     }
 
     /// <summary>
@@ -82,7 +83,8 @@ public class ProductController : ControllerBase
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _service.UpdateCategoryAsync(existing);
-        return NoContent();
+        
+        return Ok(new ApiResponse(true, "Category updated successfully", existing.Id));
     }
 
     [HttpGet("categories")]
@@ -98,8 +100,26 @@ public class ProductController : ControllerBase
             ImageUrl = c.ImageUrl,
             DisplayOrder = c.DisplayOrder,
             IsActive = c.IsActive,
-            ParentCategoryId = c.ParentCategoryId
+            ParentCategoryId = c.ParentCategoryId,
+            ParentCategoryName = null
         }).ToList();
+
+        // Populate ParentCategoryName for items that have a parent
+        var parentIds = items.Where(i => i.ParentCategoryId.HasValue).Select(i => i.ParentCategoryId!.Value).Distinct().ToList();
+        var parentMap = new Dictionary<Guid, string?>();
+        foreach (var pid in parentIds)
+        {
+            var parent = await _service.GetCategoryByIdAsync(pid);
+            parentMap[pid] = parent?.Name;
+        }
+
+        foreach (var it in items)
+        {
+            if (it.ParentCategoryId.HasValue && parentMap.TryGetValue(it.ParentCategoryId.Value, out var pname))
+            {
+                it.ParentCategoryName = pname;
+            }
+        }
 
         var result = new Elephanta.Application.Common.PagedResult<CategoryResponse>
         {
@@ -128,7 +148,41 @@ public class ProductController : ControllerBase
             IsActive = c.IsActive,
             ParentCategoryId = c.ParentCategoryId
         };
+        if (resp.ParentCategoryId.HasValue)
+        {
+            var parent = await _service.GetCategoryByIdAsync(resp.ParentCategoryId.Value);
+            resp.ParentCategoryName = parent?.Name;
+        }
+
         return Ok(resp);
+    }
+
+    /// <summary>
+    /// Requires Admin role. Deletes a category after validating it has no child categories or linked products.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
+    [HttpDelete("categories/{id}")]
+    public async Task<IActionResult> DeleteCategory(Guid id)
+    {
+        var existing = await _service.GetCategoryByIdAsync(id);
+        if (existing == null) return NotFound(new ApiResponse(false, "Category not found"));
+
+        // Check if this category is used as a parent for other categories
+        if (await _service.CategoryHasChildrenAsync(id))
+        {
+            return BadRequest(new ApiResponse(false, "This category is assigned as a parent category. Please remove or reassign its child categories before deleting it."));
+        }
+
+        // Check if any product links to this category
+        if (await _service.IsCategoryLinkedToProductsAsync(id))
+        {
+            return BadRequest(new ApiResponse(false, "This category is currently associated with one or more products. Please remove the category from those products before deleting it."));
+        }
+
+        // Safe to delete
+        await _service.DeleteCategoryAsync(id);
+        return Ok(new ApiResponse(true, "Category deleted successfully", id));
     }
 
     // FAQs

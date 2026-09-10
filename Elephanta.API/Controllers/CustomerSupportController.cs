@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using Elephanta.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Elephanta.Domain.Constants;
@@ -23,9 +24,7 @@ public class CustomerSupportController : ControllerBase
     [HttpPost("requests")]
     public async Task<IActionResult> Create([FromBody] CreateCustomerSupportRequest req)
     {
-        Guid? userId = null;
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (!string.IsNullOrEmpty(sub) && Guid.TryParse(sub, out var parsed)) userId = parsed;
+        Guid? userId = ClaimsHelper.GetUserIdFromClaims(User);
 
         var entity = new CustomerSupportRequest
         {
@@ -61,10 +60,10 @@ public class CustomerSupportController : ControllerBase
     [HttpGet("requests/my")]
     public async Task<IActionResult> GetMyRequests()
     {
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(sub) || !Guid.TryParse(sub, out var userId)) return Unauthorized();
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized();
 
-        var list = await _service.GetByUserAsync(userId);
+        var list = await _service.GetByUserAsync(userId.Value);
         var resp = list.Select(c => new CustomerSupportRequestResponse
         {
             Id = c.Id,
@@ -119,12 +118,12 @@ public class CustomerSupportController : ControllerBase
         var req = await _service.GetByIdAsync(id);
         if (req == null) return NotFound();
 
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (!string.IsNullOrEmpty(sub) && Guid.TryParse(sub, out var userId))
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (userId.HasValue)
         {
             // if not admin, ensure ownership
             var isAdmin = User.IsInRole("Admin");
-            if (!isAdmin && req.UserId != userId) return NotFound();
+            if (!isAdmin && req.UserId != userId.Value) return NotFound();
         }
 
         var resp = new CustomerSupportRequestResponse
@@ -151,12 +150,12 @@ public class CustomerSupportController : ControllerBase
         var existing = await _service.GetByIdAsync(id);
         if (existing == null) return NotFound();
 
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
         var isAdmin = User.IsInRole("Admin");
 
-        if (!string.IsNullOrEmpty(sub) && Guid.TryParse(sub, out var userId))
+        if (userId.HasValue)
         {
-            if (!isAdmin && existing.UserId != userId) return NotFound();
+            if (!isAdmin && existing.UserId != userId.Value) return NotFound();
         }
         else
         {

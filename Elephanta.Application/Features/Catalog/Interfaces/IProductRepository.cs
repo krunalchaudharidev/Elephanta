@@ -19,6 +19,11 @@ public interface IProductRepository
     Task<Product?> GetProductByIdAsync(Guid id);
     Task<Elephanta.Application.Common.PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize);
 
+    // Category relationships / deletion helpers
+    Task<bool> CategoryHasChildrenAsync(Guid categoryId);
+    Task<bool> IsCategoryLinkedToProductsAsync(Guid categoryId);
+    Task DeleteCategoryAsync(Guid categoryId);
+
     // Images
     Task<ProductImage> AddImageAsync(ProductImage img);
     Task UpdateImageAsync(ProductImage img);
