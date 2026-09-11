@@ -8,6 +8,7 @@ using Elephanta.Application.Features.ProductFaqs.Interfaces;
 using Elephanta.Application.Features.Support.Interfaces;
 using Elephanta.Application.Features.Cart.Interfaces;
 using Elephanta.Infrastructure.Services;
+using Elephanta.Application.Features.Media.Interfaces;
 
 namespace Elephanta.Infrastructure;
 
@@ -21,6 +22,8 @@ public static class DependencyInjection
         services.AddScoped<IUserAddressRepository, UserAddressRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IOfferRepository, OfferRepository>();
+        services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IMediaService, MediaService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IUserService, UserService>();
