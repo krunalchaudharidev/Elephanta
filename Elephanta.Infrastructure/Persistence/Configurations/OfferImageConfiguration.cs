@@ -12,9 +12,13 @@ public class OfferImageConfiguration : IEntityTypeConfiguration<OfferImage>
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.ImageUrl)
-            .IsRequired()
-            .HasMaxLength(1000);
+        builder.Property(x => x.MediaId)
+            .IsRequired(false);
+
+        builder.HasOne(x => x.Media)
+            .WithMany()
+            .HasForeignKey(x => x.MediaId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasOne(x => x.Offer)
             .WithMany(o => o.Images)

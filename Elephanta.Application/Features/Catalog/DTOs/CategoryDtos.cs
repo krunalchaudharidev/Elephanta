@@ -15,8 +15,7 @@ public class CategoryRequest
 
     public string? Description { get; set; }
 
-    [Url]
-    public string? ImageUrl { get; set; }
+    public Guid? MediaId { get; set; }
 
     public int DisplayOrder { get; set; }
 
@@ -35,7 +34,7 @@ public class CategoryResponse
 
     public string? Description { get; set; }
 
-    public string? ImageUrl { get; set; }
+    public Guid? MediaId { get; set; }
 
     public int DisplayOrder { get; set; }
 

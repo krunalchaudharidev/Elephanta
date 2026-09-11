@@ -71,8 +71,7 @@ public class OfferResponse
 public class OfferImageRequest
 {
     [Required]
-    [Url]
-    public string ImageUrl { get; set; } = null!;
+    public Guid MediaId { get; set; }
 
     public bool IsPrimary { get; set; }
 
@@ -84,7 +83,7 @@ public class OfferImageResponse
 {
     public Guid Id { get; set; }
 
-    public string ImageUrl { get; set; } = null!;
+    public Guid? MediaId { get; set; }
 
     public bool IsPrimary { get; set; }
 

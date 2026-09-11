@@ -12,7 +12,9 @@ public class Category : BaseEntity
 
     public string? Description { get; set; }
 
-    public string? ImageUrl { get; set; }
+    public Guid? MediaId { get; set; }
+
+    public Media? Media { get; set; }
 
     public int DisplayOrder { get; set; }
 

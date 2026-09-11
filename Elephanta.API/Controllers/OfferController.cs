@@ -152,14 +152,14 @@ public class OfferController : ControllerBase
         {
             Id = Guid.NewGuid(),
             OfferId = offerId,
-            ImageUrl = req.ImageUrl,
+            MediaId = req.MediaId,
             IsPrimary = req.IsPrimary,
             DisplayOrder = req.DisplayOrder,
             CreatedAt = DateTime.UtcNow
         };
 
         var added = await _service.AddImageAsync(img);
-        var resp = new OfferImageResponse { Id = added.Id, ImageUrl = added.ImageUrl, IsPrimary = added.IsPrimary, DisplayOrder = added.DisplayOrder };
+        var resp = new OfferImageResponse { Id = added.Id, MediaId = added.MediaId, IsPrimary = added.IsPrimary, DisplayOrder = added.DisplayOrder };
         return CreatedAtAction(nameof(GetImage), new { id = resp.Id }, resp);
     }
 
@@ -170,7 +170,7 @@ public class OfferController : ControllerBase
     {
         var existing = await _service.GetImageByIdAsync(id);
         if (existing == null) return NotFound();
-        existing.ImageUrl = req.ImageUrl;
+        existing.MediaId = req.MediaId;
         existing.IsPrimary = req.IsPrimary;
         existing.DisplayOrder = req.DisplayOrder;
         existing.UpdatedAt = DateTime.UtcNow;
@@ -182,7 +182,7 @@ public class OfferController : ControllerBase
     public async Task<IActionResult> GetImages(Guid offerId)
     {
         var list = await _service.GetImagesByOfferAsync(offerId);
-        var resp = list.Select(i => new OfferImageResponse { Id = i.Id, ImageUrl = i.ImageUrl, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder }).ToList();
+        var resp = list.Select(i => new OfferImageResponse { Id = i.Id, MediaId = i.MediaId, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder }).ToList();
         return Ok(resp);
     }
 
@@ -191,7 +191,7 @@ public class OfferController : ControllerBase
     {
         var i = await _service.GetImageByIdAsync(id);
         if (i == null) return NotFound();
-        var resp = new OfferImageResponse { Id = i.Id, ImageUrl = i.ImageUrl, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder };
+        var resp = new OfferImageResponse { Id = i.Id, MediaId = i.MediaId, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder };
         return Ok(resp);
     }
 }

@@ -33,6 +33,8 @@ public class ElephantaDbContext : DbContext
 
     public DbSet<ProductImage> ProductImages { get; set; } = null!;
 
+    public DbSet<Media> Medias { get; set; } = null!;
+
     public DbSet<ProductReview> ProductReviews { get; set; } = null!;
     public DbSet<ProductFaq> ProductFaqs { get; set; } = null!;
     public DbSet<CustomerSupportRequest> CustomerSupportRequests { get; set; } = null!;
@@ -52,16 +54,29 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CartItemConfiguration());
         modelBuilder.ApplyConfiguration(new OfferConfiguration());
         modelBuilder.ApplyConfiguration(new OfferImageConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductImageConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductReviewConfiguration());
+        modelBuilder.ApplyConfiguration(new UserAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new CategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new MediaConfiguration());
         modelBuilder.ApplyConfiguration(new ProductFaqConfiguration());
         modelBuilder.ApplyConfiguration(new CustomerSupportRequestConfiguration());
+        modelBuilder.Entity<User>();
+        modelBuilder.Entity<Role>();
+        modelBuilder.Entity<UserRole>();
+        modelBuilder.Entity<RefreshToken>();
+        modelBuilder.Entity<CartItem>();
+        modelBuilder.Entity<Offer>();
+        modelBuilder.Entity<OfferImage>();
+        modelBuilder.Entity<ProductImage>();
+        modelBuilder.Entity<Product>();
+        modelBuilder.Entity<ProductReview>();
         modelBuilder.Entity<UserAddress>();
         modelBuilder.Entity<Category>();
-        modelBuilder.Entity<Product>();
-        modelBuilder.Entity<CartItem>();
+        modelBuilder.Entity<Media>();
         modelBuilder.Entity<ProductFaq>();
         modelBuilder.Entity<CustomerSupportRequest>();
-        modelBuilder.Entity<ProductImage>();
-        modelBuilder.Entity<ProductReview>();
     }
 
     public override int SaveChanges()

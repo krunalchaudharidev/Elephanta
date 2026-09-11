@@ -3,6 +3,7 @@ using System;
 using Elephanta.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elephanta.Infrastructure.Migrations
 {
     [DbContext(typeof(ElephantaDbContext))]
-    partial class ElephantaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260911111933_ChangeMediaTableName")]
+    partial class ChangeMediaTableName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,11 +73,11 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
-
-                    b.Property<Guid?>("MediaId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -91,8 +94,6 @@ namespace Elephanta.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MediaId");
 
                     b.HasIndex("ParentCategoryId");
 
@@ -263,11 +264,13 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<bool>("IsPrimary")
                         .HasColumnType("boolean");
-
-                    b.Property<Guid?>("MediaId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid>("OfferId")
                         .HasColumnType("uuid");
@@ -276,8 +279,6 @@ namespace Elephanta.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MediaId");
 
                     b.HasIndex("OfferId");
 
@@ -388,11 +389,12 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsPrimary")
                         .HasColumnType("boolean");
-
-                    b.Property<Guid?>("MediaId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
@@ -401,8 +403,6 @@ namespace Elephanta.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MediaId");
 
                     b.HasIndex("ProductId");
 
@@ -634,15 +634,9 @@ namespace Elephanta.Infrastructure.Migrations
 
             modelBuilder.Entity("Elephanta.Domain.Entities.Category", b =>
                 {
-                    b.HasOne("Elephanta.Domain.Entities.Media", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId");
-
                     b.HasOne("Elephanta.Domain.Entities.Category", "ParentCategory")
                         .WithMany("SubCategories")
                         .HasForeignKey("ParentCategoryId");
-
-                    b.Navigation("Media");
 
                     b.Navigation("ParentCategory");
                 });
@@ -659,18 +653,11 @@ namespace Elephanta.Infrastructure.Migrations
 
             modelBuilder.Entity("Elephanta.Domain.Entities.OfferImage", b =>
                 {
-                    b.HasOne("Elephanta.Domain.Entities.Media", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Elephanta.Domain.Entities.Offer", "Offer")
                         .WithMany("Images")
                         .HasForeignKey("OfferId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Media");
 
                     b.Navigation("Offer");
                 });
@@ -699,17 +686,11 @@ namespace Elephanta.Infrastructure.Migrations
 
             modelBuilder.Entity("Elephanta.Domain.Entities.ProductImage", b =>
                 {
-                    b.HasOne("Elephanta.Domain.Entities.Media", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId");
-
                     b.HasOne("Elephanta.Domain.Entities.Product", "Product")
                         .WithMany("Images")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Media");
 
                     b.Navigation("Product");
                 });

@@ -7,7 +7,9 @@ public class ProductImage : BaseEntity
 {
     public Guid ProductId { get; set; }
 
-    public string ImageUrl { get; set; } = null!;
+    public Guid? MediaId { get; set; }
+
+    public Media? Media { get; set; }
 
     public bool IsPrimary { get; set; }
 

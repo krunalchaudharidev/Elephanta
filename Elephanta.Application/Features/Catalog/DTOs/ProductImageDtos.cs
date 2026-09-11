@@ -6,8 +6,7 @@ namespace Elephanta.Application.Features.Catalog.DTOs;
 public class ProductImageRequest
 {
     [Required]
-    [Url]
-    public string ImageUrl { get; set; } = null!;
+    public Guid MediaId { get; set; }
 
     public bool IsPrimary { get; set; }
 
@@ -19,7 +18,7 @@ public class ProductImageResponse
 {
     public Guid Id { get; set; }
 
-    public string ImageUrl { get; set; } = null!;
+    public Guid? MediaId { get; set; }
 
     public bool IsPrimary { get; set; }
 

@@ -38,7 +38,7 @@ public class ProductController : ControllerBase
             Name = req.Name,
             Slug = req.Slug,
             Description = req.Description,
-            ImageUrl = req.ImageUrl,
+            MediaId = req.MediaId,
             DisplayOrder = req.DisplayOrder,
             IsActive = req.IsActive,
             ParentCategoryId = req.ParentCategoryId,
@@ -53,7 +53,7 @@ public class ProductController : ControllerBase
             Name = added.Name,
             Slug = added.Slug,
             Description = added.Description,
-            ImageUrl = added.ImageUrl,
+            MediaId = added.MediaId,
             DisplayOrder = added.DisplayOrder,
             IsActive = added.IsActive,
             ParentCategoryId = added.ParentCategoryId
@@ -76,7 +76,7 @@ public class ProductController : ControllerBase
         existing.Name = req.Name;
         existing.Slug = req.Slug;
         existing.Description = req.Description;
-        existing.ImageUrl = req.ImageUrl;
+        existing.MediaId = req.MediaId;
         existing.DisplayOrder = req.DisplayOrder;
         existing.IsActive = req.IsActive;
         existing.ParentCategoryId = req.ParentCategoryId;
@@ -97,7 +97,7 @@ public class ProductController : ControllerBase
             Name = c.Name,
             Slug = c.Slug,
             Description = c.Description,
-            ImageUrl = c.ImageUrl,
+            MediaId = c.MediaId,
             DisplayOrder = c.DisplayOrder,
             IsActive = c.IsActive,
             ParentCategoryId = c.ParentCategoryId,
@@ -143,7 +143,7 @@ public class ProductController : ControllerBase
             Name = c.Name,
             Slug = c.Slug,
             Description = c.Description,
-            ImageUrl = c.ImageUrl,
+            MediaId = c.MediaId,
             DisplayOrder = c.DisplayOrder,
             IsActive = c.IsActive,
             ParentCategoryId = c.ParentCategoryId
@@ -431,14 +431,14 @@ public class ProductController : ControllerBase
         {
             Id = Guid.NewGuid(),
             ProductId = productId,
-            ImageUrl = req.ImageUrl,
+            MediaId = req.MediaId,
             IsPrimary = req.IsPrimary,
             DisplayOrder = req.DisplayOrder,
             CreatedAt = DateTime.UtcNow
         };
 
         var added = await _service.AddImageAsync(img);
-        var resp = new ProductImageResponse { Id = added.Id, ImageUrl = added.ImageUrl, IsPrimary = added.IsPrimary, DisplayOrder = added.DisplayOrder };
+        var resp = new ProductImageResponse { Id = added.Id, MediaId = added.MediaId, IsPrimary = added.IsPrimary, DisplayOrder = added.DisplayOrder };
         return CreatedAtAction(nameof(GetImage), new { id = resp.Id }, resp);
     }
 
@@ -452,7 +452,7 @@ public class ProductController : ControllerBase
     {
         var existing = await _service.GetImageByIdAsync(id);
         if (existing == null) return NotFound();
-        existing.ImageUrl = req.ImageUrl;
+        existing.MediaId = req.MediaId;
         existing.IsPrimary = req.IsPrimary;
         existing.DisplayOrder = req.DisplayOrder;
         existing.UpdatedAt = DateTime.UtcNow;
@@ -464,7 +464,7 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> GetImages(Guid productId)
     {
         var list = await _service.GetImagesByProductAsync(productId);
-        var resp = list.Select(i => new ProductImageResponse { Id = i.Id, ImageUrl = i.ImageUrl, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder }).ToList();
+        var resp = list.Select(i => new ProductImageResponse { Id = i.Id, MediaId = i.MediaId, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder }).ToList();
         return Ok(resp);
     }
 
@@ -473,7 +473,7 @@ public class ProductController : ControllerBase
     {
         var i = await _service.GetImageByIdAsync(id);
         if (i == null) return NotFound();
-        var resp = new ProductImageResponse { Id = i.Id, ImageUrl = i.ImageUrl, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder };
+        var resp = new ProductImageResponse { Id = i.Id, MediaId = i.MediaId, IsPrimary = i.IsPrimary, DisplayOrder = i.DisplayOrder };
         return Ok(resp);
     }
 
