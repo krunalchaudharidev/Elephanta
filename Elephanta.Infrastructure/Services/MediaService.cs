@@ -3,7 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Elephanta.Application.Features.Media.Interfaces;
-using DomainMedia = Elephanta.Domain.Entities.Media;
+using Elephanta.Application.Features.Media.DTOs;
+using Elephanta.Domain.Entities;
 
 namespace Elephanta.Infrastructure.Services;
 
@@ -19,16 +20,14 @@ public class MediaService : IMediaService
         _contentRoot = AppContext.BaseDirectory ?? Directory.GetCurrentDirectory();
     }
 
-    public async Task<DomainMedia> SaveAsync(Stream content, string originalFileName, string contentType, string moduleType)
+    public async Task<MediaDto> SaveAsync(ImageUploadDto dto)
     {
         var uploadsRoot = Path.Combine(_contentRoot, "uploads");
         if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
-
-        var folder = _subFolders.Contains(moduleType?.ToLower()) ? moduleType.ToLower() : "product";
+        var folder = _subFolders.Contains(dto?.ModuleType?.ToLower()) ? dto.ModuleType.ToLower() : "product";
         var folderPath = Path.Combine(uploadsRoot, folder);
         if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
-
-        var ext = Path.GetExtension(originalFileName) ?? string.Empty;
+        var ext = Path.GetExtension(dto.FileName) ?? string.Empty;
         var fileName = $"{Guid.NewGuid()}{ext}";
         var relativePath = Path.Combine("uploads", folder, fileName);
         var fullPath = Path.Combine(_contentRoot, relativePath);
@@ -36,35 +35,63 @@ public class MediaService : IMediaService
         // Save file
         using (var fs = File.Create(fullPath))
         {
-            await content.CopyToAsync(fs);
+            await dto.Content.CopyToAsync(fs);
         }
 
         var fi = new FileInfo(fullPath);
 
-        var media = new DomainMedia
+        var media = new Media
         {
             Id = Guid.NewGuid(),
-            FileName = originalFileName,
+            FileName = dto.FileName,
             FilePath = relativePath,
-            FileType = contentType,
+            FileType = dto.ContentType,
             FileSizeBytes = fi.Length,
             ModuleType = folder,
             CreatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(media);
-        return media;
+        return new MediaDto
+        {
+            Id = media.Id,
+            FileName = media.FileName,
+            FilePath = media.FilePath,
+            FileType = media.FileType,
+            FileSizeBytes = media.FileSizeBytes,
+            ModuleType = media.ModuleType,
+            CreatedAt = media.CreatedAt
+        };
     }
 
-    public async Task<(DomainMedia?, Stream?)> GetFileAsync(Guid id)
+    public async Task<(MediaDto?, Stream?)> GetFileAsync(Guid id)
     {
         var media = await _repo.GetByIdAsync(id);
         if (media == null) return (null, null);
 
         var fullPath = Path.Combine(_contentRoot, media.FilePath);
-        if (!File.Exists(fullPath)) return (media, null);
+        if (!File.Exists(fullPath)) return (new MediaDto
+        {
+            Id = media.Id,
+            FileName = media.FileName,
+            FilePath = media.FilePath,
+            FileType = media.FileType,
+            FileSizeBytes = media.FileSizeBytes,
+            ModuleType = media.ModuleType,
+            CreatedAt = media.CreatedAt
+        }, null);
 
         var fs = File.OpenRead(fullPath);
-        return (media, fs);
+        var dto = new MediaDto
+        {
+            Id = media.Id,
+            FileName = media.FileName,
+            FilePath = media.FilePath,
+            FileType = media.FileType,
+            FileSizeBytes = media.FileSizeBytes,
+            ModuleType = media.ModuleType,
+            CreatedAt = media.CreatedAt
+        };
+        return (dto, fs);
     }
 }

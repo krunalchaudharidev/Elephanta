@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Elephanta.Application.Features.Media.Interfaces;
-using DomainMedia = Elephanta.Domain.Entities.Media;
+using Elephanta.Domain.Entities;
 using Elephanta.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,14 +16,14 @@ public class MediaRepository : IMediaRepository
         _db = db;
     }
 
-    public async Task<DomainMedia> AddAsync(DomainMedia media)
+    public async Task<Media> AddAsync(Media media)
     {
         _db.Medias.Add(media);
         await _db.SaveChangesAsync();
         return media;
     }
 
-    public async Task<DomainMedia?> GetByIdAsync(Guid id)
+    public async Task<Media?> GetByIdAsync(Guid id)
     {
         return await _db.Medias.FirstOrDefaultAsync(m => m.Id == id);
     }

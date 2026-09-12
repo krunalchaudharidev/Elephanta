@@ -1,11 +1,12 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
+using Elephanta.Application.Features.Media.DTOs;
+
 namespace Elephanta.Application.Features.Media.Interfaces;
 
 public interface IMediaService
 {
-    Task<Elephanta.Domain.Entities.Media> SaveAsync(System.IO.Stream content, string originalFileName, string contentType, string moduleType);
+    Task<MediaDto> SaveAsync(ImageUploadDto dto);
 
-    Task<(Elephanta.Domain.Entities.Media?, System.IO.Stream?)> GetFileAsync(Guid id);
+    Task<(MediaDto?, Stream?)> GetFileAsync(Guid id);
 }
