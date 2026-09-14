@@ -10,11 +10,11 @@ namespace Elephanta.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ImageController : ControllerBase
+public class MediaController : ControllerBase
 {
     private readonly IMediaService _mediaService;
 
-    public ImageController(IMediaService mediaService)
+    public MediaController(IMediaService mediaService)
     {
         _mediaService = mediaService;
     }
