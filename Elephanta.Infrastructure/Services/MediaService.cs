@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 using Elephanta.Application.Features.Media.Interfaces;
 using Elephanta.Application.Features.Media.DTOs;
 using Elephanta.Domain.Entities;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace Elephanta.Infrastructure.Services;
 
@@ -32,10 +36,38 @@ public class MediaService : IMediaService
         var relativePath = Path.Combine("uploads", folder, fileName);
         var fullPath = Path.Combine(_contentRoot, relativePath);
 
-        // Save file
-        using (var fs = File.Create(fullPath))
+        // Save file (optionally compress)
+        if (dto.IsCompress)
         {
-            await dto.Content.CopyToAsync(fs);
+            // Use ImageSharp to re-encode with compression settings
+            dto.Content.Position = 0;
+            using var image = await Image.LoadAsync(dto.Content);
+            await using var outFs = File.Create(fullPath);
+
+            var lower = dto.ContentType?.ToLower() ?? string.Empty;
+            if (lower.Contains("png"))
+            {
+                var encoder = new PngEncoder()
+                {
+                    CompressionLevel = PngCompressionLevel.Level6
+                };
+                await image.SaveAsPngAsync(outFs, encoder);
+            }
+            else
+            {
+                var encoder = new JpegEncoder()
+                {
+                    Quality = 75
+                };
+                await image.SaveAsJpegAsync(outFs, encoder);
+            }
+        }
+        else
+        {
+            using (var fs = File.Create(fullPath))
+            {
+                await dto.Content.CopyToAsync(fs);
+            }
         }
 
         var fi = new FileInfo(fullPath);

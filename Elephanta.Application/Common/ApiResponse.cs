@@ -1,6 +1,6 @@
 using System;
 
-namespace Elephanta.API.Models
+namespace Elephanta.Application.Common
 {
     // Standard API response wrapper used by controllers.
     public class ApiResponse

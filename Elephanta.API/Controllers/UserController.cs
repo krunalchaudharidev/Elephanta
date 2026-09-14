@@ -1,13 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Elephanta.API.Helpers;
 using Elephanta.Application.Features.Authentication.DTOs;
 using Elephanta.Application.Features.Authentication.Interfaces;
 using Elephanta.Domain.Constants;
 using Elephanta.Application.Features.Authentication.Services;
-using Elephanta.API.Models;
+using Elephanta.Application.Common;
 
 namespace Elephanta.API.Controllers;
 

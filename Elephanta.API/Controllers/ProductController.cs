@@ -6,7 +6,7 @@ using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Domain.Entities;
 using Elephanta.Application.Features.ProductFaqs.DTOs;
 using Elephanta.Application.Features.ProductFaqs.Interfaces;
-using Elephanta.API.Models;
+using Elephanta.Application.Common;
 
 namespace Elephanta.API.Controllers;
 

@@ -4,6 +4,7 @@ using Elephanta.Application.Features.Media.Interfaces;
 using Elephanta.Application.Features.Media.DTOs;
 using Elephanta.API.Models;
 using Elephanta.Domain.Constants;
+using Elephanta.API.Helpers;
 
 namespace Elephanta.API.Controllers;
 
@@ -27,8 +28,13 @@ public class ImageController : ControllerBase
         var moduleType = req?.ModuleType ?? "product";
         if (file == null || file.Length == 0) return BadRequest("No file uploaded");
 
+        if (!MediaHelper.ValidateAllowed(moduleType ?? string.Empty, file.ContentType, file.FileName, out var detectedType, out var allowedTypes))
+        {
+            return BadRequest($"The '{moduleType}' module does not allow {detectedType.ToString().ToLower()} files.");
+        }
+
         using var stream = file.OpenReadStream();
-        var dto = new ImageUploadDto { Content = stream, FileName = file.FileName, ContentType = file.ContentType ?? "application/octet-stream", ModuleType = moduleType };
+        var dto = new ImageUploadDto { Content = stream, FileName = file.FileName, ContentType = file.ContentType ?? "application/octet-stream", ModuleType = moduleType, IsCompress = req.IsCompress };
         MediaDto mediaDto = await _mediaService.SaveAsync(dto);
 
         return CreatedAtAction(nameof(Get), new { id = mediaDto.Id }, new { id = mediaDto.Id, path = mediaDto.FilePath });

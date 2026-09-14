@@ -9,4 +9,6 @@ public class ImageUploadRequest
     public IFormFile File { get; set; } = null!;
 
     public string ModuleType { get; set; } = "product";
+
+    public bool IsCompress { get; set; } = false;
 }

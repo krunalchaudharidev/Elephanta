@@ -11,4 +11,5 @@ public class ImageUploadDto
     public string ContentType { get; set; } = string.Empty;
 
     public string ModuleType { get; set; } = "product";
+    public bool IsCompress { get; set; } = false;
 }
