@@ -1,4 +1,5 @@
 using Elephanta.Application.Common;
+using System.IO;
 using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Domain.Entities;
 using Elephanta.Infrastructure.Persistence;
@@ -38,8 +39,8 @@ public class ProductRepository : IProductRepository
     {
         var q = _db.Categories.AsQueryable();
         var total = await q.CountAsync();
-        var items = await q.OrderBy(c => c.DisplayOrder).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new Elephanta.Application.Common.PagedResult<Category> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
+        var items = await q.OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+        return new PagedResult<Category> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
     }
 
     // Product
@@ -158,6 +159,20 @@ public class ProductRepository : IProductRepository
     {
         var c = await _db.Categories.FirstOrDefaultAsync(x => x.Id == categoryId);
         if (c == null) return;
+        // If category has an associated media, let MediaRepository handle file + record deletion
+        if (c.MediaId.HasValue)
+        {
+            try
+            {
+                var mediaRepo = new MediaRepository(_db);
+                await mediaRepo.DeleteByIdAsync(c.MediaId.Value);
+            }
+            catch
+            {
+                // ignore and proceed with category deletion
+            }
+        }
+
         _db.Categories.Remove(c);
         await _db.SaveChangesAsync();
     }

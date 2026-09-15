@@ -121,7 +121,7 @@ public class ProductController : ControllerBase
             }
         }
 
-        var result = new Elephanta.Application.Common.PagedResult<CategoryResponse>
+        var result = new PagedResult<CategoryResponse>
         {
             Items = items,
             TotalCount = paged.TotalCount,

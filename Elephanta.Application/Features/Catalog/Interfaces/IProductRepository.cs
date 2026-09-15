@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Elephanta.Application.Common;
 using Elephanta.Domain.Entities;
 
 namespace Elephanta.Application.Features.Catalog.Interfaces;
@@ -11,13 +12,13 @@ public interface IProductRepository
     Task<Category> AddCategoryAsync(Category category);
     Task UpdateCategoryAsync(Category category);
     Task<Category?> GetCategoryByIdAsync(Guid id);
-    Task<Elephanta.Application.Common.PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize);
+    Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize);
 
     // Product
     Task<Product> AddProductAsync(Product product);
     Task UpdateProductAsync(Product product);
     Task<Product?> GetProductByIdAsync(Guid id);
-    Task<Elephanta.Application.Common.PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize);
+    Task<PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize);
 
     // Category relationships / deletion helpers
     Task<bool> CategoryHasChildrenAsync(Guid categoryId);
@@ -37,5 +38,5 @@ public interface IProductRepository
     Task<List<ProductReview>> GetReviewsByProductAsync(Guid productId);
 
     // Search / filter
-    Task<Elephanta.Application.Common.PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize);
+    Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize);
 }

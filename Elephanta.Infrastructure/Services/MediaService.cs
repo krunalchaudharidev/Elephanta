@@ -32,7 +32,9 @@ public class MediaService : IMediaService
         var folderPath = Path.Combine(uploadsRoot, folder);
         if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
         var ext = Path.GetExtension(dto.FileName) ?? string.Empty;
-        var fileName = $"{Guid.NewGuid()}{ext}";
+        var timestamp = DateTime.UtcNow.ToString("ddMMyyyyHHmmss");
+        var safeModule = string.IsNullOrWhiteSpace(dto.ModuleType) ? "product" : dto.ModuleType.ToLowerInvariant();
+        var fileName = $"{safeModule}_{timestamp}_{Guid.NewGuid()}{ext}";
         var relativePath = Path.Combine("uploads", folder, fileName);
         var fullPath = Path.Combine(_contentRoot, relativePath);
 
@@ -75,7 +77,7 @@ public class MediaService : IMediaService
         var media = new Media
         {
             Id = Guid.NewGuid(),
-            FileName = dto.FileName,
+            FileName = fileName,
             FilePath = relativePath,
             FileType = dto.ContentType,
             FileSizeBytes = fi.Length,
