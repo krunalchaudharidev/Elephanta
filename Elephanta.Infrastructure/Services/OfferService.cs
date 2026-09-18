@@ -25,4 +25,6 @@ public class OfferService : IOfferService
     public Task UpdateImageAsync(OfferImage img) => _repo.UpdateImageAsync(img);
     public Task<OfferImage?> GetImageByIdAsync(Guid id) => _repo.GetImageByIdAsync(id);
     public Task<List<OfferImage>> GetImagesByOfferAsync(Guid offerId) => _repo.GetImagesByOfferAsync(offerId);
+    public Task DeleteImageAsync(Guid id) => _repo.DeleteImageAsync(id);
+    public Task<OfferImage?> GetImageByMediaIdAsync(Guid mediaId) => _repo.GetImageByMediaIdAsync(mediaId);
 }

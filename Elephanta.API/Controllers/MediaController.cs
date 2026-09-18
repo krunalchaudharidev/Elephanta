@@ -5,6 +5,9 @@ using Elephanta.Application.Features.Media.DTOs;
 using Elephanta.API.Models;
 using Elephanta.Domain.Constants;
 using Elephanta.API.Helpers;
+using Elephanta.Application.Common;
+using Elephanta.Application.Features.Catalog.Interfaces;
+using Elephanta.Application.Features.Offers.Interfaces;
 
 namespace Elephanta.API.Controllers;
 
@@ -13,10 +16,62 @@ namespace Elephanta.API.Controllers;
 public class MediaController : ControllerBase
 {
     private readonly IMediaService _mediaService;
+    private readonly IProductService _productService;
+    private readonly IOfferService _offerService;
 
-    public MediaController(IMediaService mediaService)
+    public MediaController(IMediaService mediaService, IProductService productService, IOfferService offerService)
     {
         _mediaService = mediaService;
+        _productService = productService;
+        _offerService = offerService;
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
+    [HttpDelete("{id?}")]
+    public async Task<IActionResult> Delete([FromRoute] Guid? id, [FromQuery] string? moduleType)
+    {
+        if (!id.HasValue || string.IsNullOrWhiteSpace(moduleType)) return BadRequest(new ApiResponse(false, "id and moduleType are required"));
+
+        var mtype = moduleType.Trim().ToLowerInvariant();
+
+        switch (mtype)
+        {
+            case "category":
+            {
+                // find category by media id
+                var category = await _productService.GetCategoryByMediaIdAsync(id.Value);
+                if (category == null) return NotFound(new ApiResponse(false, "Category not found for given media id"));
+                // clear relation and update
+                category.MediaId = null;
+                await _productService.UpdateCategoryAsync(category);
+                break;
+            }
+            case "offer":
+            {
+                // find offer image by media id
+                var offerImg = await _offerService.GetImageByMediaIdAsync(id.Value);
+                if (offerImg == null) return NotFound(new ApiResponse(false, "Offer image not found for given media id"));
+                // capture image id then delete the offer image record
+                await _offerService.DeleteImageAsync(offerImg.Id);
+                break;
+            }
+            case "product":
+            {
+                // find product image by media id
+                var prodImg = await _productService.GetImageByMediaIdAsync(id.Value);
+                if (prodImg == null) return NotFound(new ApiResponse(false, "Product image not found for given media id"));
+                await _productService.DeleteImageAsync(prodImg.Id);
+                break;
+            }
+            default:
+                return BadRequest(new ApiResponse(false, "Invalid moduleType"));
+        }
+
+        // finally delete media record and file
+        await _mediaService.DeleteAsync(id.Value);
+
+        return Ok(new ApiResponse(true, "Media relation and media deleted successfully"));
     }
 
     [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]

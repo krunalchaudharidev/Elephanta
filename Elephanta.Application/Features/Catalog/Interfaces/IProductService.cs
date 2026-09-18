@@ -12,6 +12,7 @@ public interface IProductService
     Task<Category> AddCategoryAsync(Category category);
     Task UpdateCategoryAsync(Category category);
     Task<Category?> GetCategoryByIdAsync(Guid id);
+    Task<Category?> GetCategoryByMediaIdAsync(Guid mediaId);
     Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize);
 
     // Product
@@ -24,7 +25,9 @@ public interface IProductService
     Task<ProductImage> AddImageAsync(ProductImage img);
     Task UpdateImageAsync(ProductImage img);
     Task<ProductImage?> GetImageByIdAsync(Guid id);
+    Task<ProductImage?> GetImageByMediaIdAsync(Guid mediaId);
     Task<List<ProductImage>> GetImagesByProductAsync(Guid productId);
+    Task DeleteImageAsync(Guid id);
 
     // Reviews
     Task<ProductReview> AddReviewAsync(ProductReview review);

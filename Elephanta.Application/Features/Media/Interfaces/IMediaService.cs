@@ -9,4 +9,6 @@ public interface IMediaService
     Task<MediaDto> SaveAsync(ImageUploadDto dto);
 
     Task<(MediaDto?, Stream?)> GetFileAsync(Guid id);
+
+    Task DeleteAsync(Guid id);
 }

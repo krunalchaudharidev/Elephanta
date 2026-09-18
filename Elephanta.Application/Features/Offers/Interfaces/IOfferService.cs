@@ -17,4 +17,6 @@ public interface IOfferService
     Task UpdateImageAsync(OfferImage img);
     Task<OfferImage?> GetImageByIdAsync(Guid id);
     Task<List<OfferImage>> GetImagesByOfferAsync(Guid offerId);
+    Task<OfferImage?> GetImageByMediaIdAsync(Guid mediaId);
+    Task DeleteImageAsync(Guid id);
 }

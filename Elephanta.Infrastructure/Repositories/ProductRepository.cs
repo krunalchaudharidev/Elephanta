@@ -94,6 +94,24 @@ public class ProductRepository : IProductRepository
         return await _db.ProductImages.Where(i => i.ProductId == productId).ToListAsync();
     }
 
+    public async Task DeleteImageAsync(Guid id)
+    {
+        var img = await _db.ProductImages.FirstOrDefaultAsync(i => i.Id == id);
+        if (img == null) return;
+        _db.ProductImages.Remove(img);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task<Category?> GetCategoryByMediaIdAsync(Guid mediaId)
+    {
+        return await _db.Categories.FirstOrDefaultAsync(c => c.MediaId == mediaId);
+    }
+
+    public async Task<ProductImage?> GetImageByMediaIdAsync(Guid mediaId)
+    {
+        return await _db.ProductImages.FirstOrDefaultAsync(i => i.MediaId == mediaId);
+    }
+
     // Reviews
     public async Task<ProductReview> AddReviewAsync(ProductReview review)
     {

@@ -67,4 +67,17 @@ public class OfferRepository : IOfferRepository
     {
         return await _db.OfferImages.Where(i => i.OfferId == offerId).ToListAsync();
     }
+
+    public async Task DeleteImageAsync(Guid id)
+    {
+        var img = await _db.OfferImages.FirstOrDefaultAsync(i => i.Id == id);
+        if (img == null) return;
+        _db.OfferImages.Remove(img);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task<OfferImage?> GetImageByMediaIdAsync(Guid mediaId)
+    {
+        return await _db.OfferImages.FirstOrDefaultAsync(i => i.MediaId == mediaId);
+    }
 }

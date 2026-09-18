@@ -25,11 +25,15 @@ public interface IProductRepository
     Task<bool> IsCategoryLinkedToProductsAsync(Guid categoryId);
     Task DeleteCategoryAsync(Guid categoryId);
 
+    Task<Category?> GetCategoryByMediaIdAsync(Guid mediaId);
+
     // Images
     Task<ProductImage> AddImageAsync(ProductImage img);
     Task UpdateImageAsync(ProductImage img);
     Task<ProductImage?> GetImageByIdAsync(Guid id);
     Task<List<ProductImage>> GetImagesByProductAsync(Guid productId);
+    Task DeleteImageAsync(Guid id);
+    Task<ProductImage?> GetImageByMediaIdAsync(Guid mediaId);
 
     // Reviews
     Task<ProductReview> AddReviewAsync(ProductReview review);

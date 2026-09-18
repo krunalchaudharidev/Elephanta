@@ -27,6 +27,9 @@ public class ProductService : IProductService
     public Task UpdateImageAsync(ProductImage img) => _repo.UpdateImageAsync(img);
     public Task<ProductImage?> GetImageByIdAsync(Guid id) => _repo.GetImageByIdAsync(id);
     public Task<List<ProductImage>> GetImagesByProductAsync(Guid productId) => _repo.GetImagesByProductAsync(productId);
+    public Task DeleteImageAsync(Guid id) => _repo.DeleteImageAsync(id);
+    public Task<Category?> GetCategoryByMediaIdAsync(Guid mediaId) => _repo.GetCategoryByMediaIdAsync(mediaId);
+    public Task<ProductImage?> GetImageByMediaIdAsync(Guid mediaId) => _repo.GetImageByMediaIdAsync(mediaId);
 
     public Task<ProductReview> AddReviewAsync(ProductReview review) => _repo.AddReviewAsync(review);
     public Task UpdateReviewAsync(ProductReview review) => _repo.UpdateReviewAsync(review);

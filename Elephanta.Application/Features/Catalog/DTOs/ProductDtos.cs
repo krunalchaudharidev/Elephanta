@@ -37,6 +37,9 @@ public class ProductRequest
 
     [Required]
     public Guid CategoryId { get; set; }
+
+    // Optional media ids to create ProductImage records for the new product
+    public List<Guid> ImageIds { get; set; } = new List<Guid>();
 }
 
 public class ProductResponse
@@ -68,4 +71,7 @@ public class ProductResponse
     public List<Guid> ImageIds { get; set; } = new List<Guid>();
 
     public int ReviewCount { get; set; }
+
+    // Optional: include the category name for convenience in responses
+    public string? CategoryName { get; set; }
 }

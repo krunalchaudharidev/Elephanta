@@ -128,4 +128,9 @@ public class MediaService : IMediaService
         };
         return (dto, fs);
     }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        await _repo.DeleteByIdAsync(id);
+    }
 }

@@ -310,6 +310,27 @@ public class ProductController : ControllerBase
 
         var added = await _service.AddProductAsync(p);
 
+        // If request contains ImageIds, create ProductImage records
+        if (req.ImageIds != null && req.ImageIds.Count > 0)
+        {
+            int order = 0;
+            foreach (var imgId in req.ImageIds)
+            {
+                var pi = new ProductImage
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = added.Id,
+                    MediaId = imgId,
+                    IsPrimary = order == 0,
+                    DisplayOrder = order,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _service.AddImageAsync(pi);
+                order++;
+            }
+        }
+
         var resp = new ProductResponse
         {
             Id = added.Id,
@@ -324,7 +345,7 @@ public class ProductController : ControllerBase
             IsActive = added.IsActive,
             IsFeatured = added.IsFeatured,
             CategoryId = added.CategoryId,
-            ImageIds = added.Images?.Select(i => i.Id).ToList() ?? new List<Guid>(),
+            ImageIds = (req.ImageIds != null && req.ImageIds.Count > 0) ? req.ImageIds : (added.Images?.Select(i => i.Id).ToList() ?? new List<Guid>()),
             ReviewCount = added.Reviews?.Count ?? 0
         };
 
@@ -377,11 +398,47 @@ public class ProductController : ControllerBase
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
-            ImageIds = p.Images?.Select(i => i.Id).ToList() ?? new List<Guid>(),
+            ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0
         }).ToList();
 
-        var result = new Elephanta.Application.Common.PagedResult<ProductResponse>
+        // Populate CategoryName for each product in the search results
+        var searchCategoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
+        var searchCategoryMap = new Dictionary<Guid, string?>();
+        foreach (var cid in searchCategoryIds)
+        {
+            var c = await _service.GetCategoryByIdAsync(cid);
+            searchCategoryMap[cid] = c?.Name;
+        }
+
+        foreach (var it in items)
+        {
+            if (it.CategoryId != Guid.Empty && searchCategoryMap.TryGetValue(it.CategoryId, out var cname))
+            {
+                it.CategoryName = cname;
+            }
+        }
+
+        // (CategoryName already populated above)
+
+        // Populate CategoryName for each product
+        var categoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
+        var categoryMap = new Dictionary<Guid, string?>();
+        foreach (var cid in categoryIds)
+        {
+            var c = await _service.GetCategoryByIdAsync(cid);
+            categoryMap[cid] = c?.Name;
+        }
+
+        foreach (var it in items)
+        {
+            if (it.CategoryId != Guid.Empty && categoryMap.TryGetValue(it.CategoryId, out var cname))
+            {
+                it.CategoryName = cname;
+            }
+        }
+
+        var result = new PagedResult<ProductResponse>
         {
             Items = items,
             TotalCount = paged.TotalCount,
@@ -411,9 +468,16 @@ public class ProductController : ControllerBase
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
-            ImageIds = p.Images?.Select(i => i.Id).ToList() ?? new List<Guid>(),
+            ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0
         };
+
+        // Populate CategoryName for this product
+        if (resp.CategoryId != Guid.Empty)
+        {
+            var cat = await _service.GetCategoryByIdAsync(resp.CategoryId);
+            resp.CategoryName = cat?.Name;
+        }
 
         return Ok(resp);
     }
@@ -545,11 +609,47 @@ public class ProductController : ControllerBase
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
-            ImageIds = p.Images?.Select(i => i.Id).ToList() ?? new List<Guid>(),
+            ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0
         }).ToList();
 
-        var result = new Elephanta.Application.Common.PagedResult<ProductResponse>
+        // Populate CategoryName for each product in the search results
+        var searchCategoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
+        var searchCategoryMap = new Dictionary<Guid, string?>();
+        foreach (var cid in searchCategoryIds)
+        {
+            var c = await _service.GetCategoryByIdAsync(cid);
+            searchCategoryMap[cid] = c?.Name;
+        }
+
+        foreach (var it in items)
+        {
+            if (it.CategoryId != Guid.Empty && searchCategoryMap.TryGetValue(it.CategoryId, out var cname))
+            {
+                it.CategoryName = cname;
+            }
+        }
+
+        // (CategoryName already populated above)
+
+        // Populate CategoryName for each product
+        var categoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
+        var categoryMap = new Dictionary<Guid, string?>();
+        foreach (var cid in categoryIds)
+        {
+            var c = await _service.GetCategoryByIdAsync(cid);
+            categoryMap[cid] = c?.Name;
+        }
+
+        foreach (var it in items)
+        {
+            if (it.CategoryId != Guid.Empty && categoryMap.TryGetValue(it.CategoryId, out var cname))
+            {
+                it.CategoryName = cname;
+            }
+        }
+
+        var result = new PagedResult<ProductResponse>
         {
             Items = items,
             TotalCount = paged.TotalCount,
