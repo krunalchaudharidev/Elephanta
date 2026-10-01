@@ -42,6 +42,37 @@ public class ProductRequest
     public List<Guid> ImageIds { get; set; } = new List<Guid>();
 }
 
+public class ProductUpdateRequest
+{
+    public string? Name { get; set; }
+
+    public string? Slug { get; set; }
+
+    public string? SKU { get; set; }
+
+    public string? ShortDescription { get; set; }
+
+    public string? Description { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? Price { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? CompareAtPrice { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int? StockQuantity { get; set; }
+
+    public bool? IsActive { get; set; }
+
+    public bool? IsFeatured { get; set; }
+
+    public Guid? CategoryId { get; set; }
+
+    // Optional media ids to create or update ProductImage records
+    public List<Guid>? ImageIds { get; set; }
+}
+
 public class ProductResponse
 {
     public Guid Id { get; set; }

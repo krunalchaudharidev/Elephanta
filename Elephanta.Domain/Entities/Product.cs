@@ -39,4 +39,9 @@ public class Product : BaseEntity
         = new List<ProductReview>();
 
     public ICollection<ProductFaq> Faqs { get; set; } = new List<ProductFaq>();
+
+    // Soft-delete
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
 }

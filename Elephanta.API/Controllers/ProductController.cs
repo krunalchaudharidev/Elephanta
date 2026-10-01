@@ -71,7 +71,7 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] CategoryRequest req)
     {
         var existing = await _service.GetCategoryByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "Category not found"));
 
         existing.Name = req.Name;
         existing.Slug = req.Slug;
@@ -222,7 +222,7 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> UpdateFaq(Guid id, [FromBody] ProductFaqRequest req)
     {
         var existing = await _faqService.GetFaqByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "FAQ not found"));
 
         existing.Question = req.Question;
         existing.Answer = req.Answer;
@@ -231,7 +231,7 @@ public class ProductController : ControllerBase
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _faqService.UpdateFaqAsync(existing);
-        return NoContent();
+        return Ok(new ApiResponse(true, "FAQ updated successfully", existing.Id));
     }
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
@@ -240,10 +240,10 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> DeleteFaq(Guid id)
     {
         var existing = await _faqService.GetFaqByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "FAQ not found"));
 
         await _faqService.DeleteFaqAsync(id);
-        return NoContent();
+        return Ok(new ApiResponse(true, "FAQ deleted successfully", id));
     }
 
     [HttpGet("products/{productId}/faqs")]
@@ -358,26 +358,45 @@ public class ProductController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [ApiExplorerSettings(GroupName = "Admin")]
     [HttpPut("products/{id}")]
-    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] ProductRequest req)
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] ProductUpdateRequest req)
     {
         var existing = await _service.GetProductByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "Product not found"));
 
-        existing.Name = req.Name;
-        existing.Slug = req.Slug;
-        existing.SKU = req.SKU;
-        existing.ShortDescription = req.ShortDescription;
-        existing.Description = req.Description;
-        existing.Price = req.Price;
-        existing.CompareAtPrice = req.CompareAtPrice;
-        existing.StockQuantity = req.StockQuantity;
-        existing.IsActive = req.IsActive;
-        existing.IsFeatured = req.IsFeatured;
-        existing.CategoryId = req.CategoryId;
+        if (req.Name != null) existing.Name = req.Name;
+        if (req.Slug != null) existing.Slug = req.Slug;
+        if (req.SKU != null) existing.SKU = req.SKU;
+        if (req.ShortDescription != null) existing.ShortDescription = req.ShortDescription;
+        if (req.Description != null) existing.Description = req.Description;
+        if (req.Price.HasValue) existing.Price = req.Price.Value;
+        if (req.CompareAtPrice.HasValue) existing.CompareAtPrice = req.CompareAtPrice;
+        if (req.StockQuantity.HasValue) existing.StockQuantity = req.StockQuantity.Value;
+        if (req.IsActive.HasValue) existing.IsActive = req.IsActive.Value;
+        if (req.IsFeatured.HasValue) existing.IsFeatured = req.IsFeatured.Value;
+        if (req.CategoryId.HasValue) existing.CategoryId = req.CategoryId.Value;
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _service.UpdateProductAsync(existing);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Product updated successfully", existing.Id));
+    }
+
+    /// <summary>
+    /// Requires Admin role. Soft-delete a product by setting IsDeleted and DeletedAt.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
+    [HttpDelete("products/{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var existing = await _service.GetProductByIdAsync(id);
+        if (existing == null) return NotFound(new ApiResponse(false, "Product not found"));
+
+        existing.IsDeleted = true;
+        existing.DeletedAt = DateTime.UtcNow;
+
+        await _service.UpdateProductAsync(existing);
+
+        return Ok(new ApiResponse(true, "Product deleted successfully", id));
     }
 
     [HttpGet("products")]
@@ -399,44 +418,9 @@ public class ProductController : ControllerBase
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
-            ReviewCount = p.Reviews?.Count ?? 0
+            ReviewCount = p.Reviews?.Count ?? 0,
+            CategoryName = p.Category?.Name
         }).ToList();
-
-        // Populate CategoryName for each product in the search results
-        var searchCategoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
-        var searchCategoryMap = new Dictionary<Guid, string?>();
-        foreach (var cid in searchCategoryIds)
-        {
-            var c = await _service.GetCategoryByIdAsync(cid);
-            searchCategoryMap[cid] = c?.Name;
-        }
-
-        foreach (var it in items)
-        {
-            if (it.CategoryId != Guid.Empty && searchCategoryMap.TryGetValue(it.CategoryId, out var cname))
-            {
-                it.CategoryName = cname;
-            }
-        }
-
-        // (CategoryName already populated above)
-
-        // Populate CategoryName for each product
-        var categoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
-        var categoryMap = new Dictionary<Guid, string?>();
-        foreach (var cid in categoryIds)
-        {
-            var c = await _service.GetCategoryByIdAsync(cid);
-            categoryMap[cid] = c?.Name;
-        }
-
-        foreach (var it in items)
-        {
-            if (it.CategoryId != Guid.Empty && categoryMap.TryGetValue(it.CategoryId, out var cname))
-            {
-                it.CategoryName = cname;
-            }
-        }
 
         var result = new PagedResult<ProductResponse>
         {
@@ -469,15 +453,9 @@ public class ProductController : ControllerBase
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
-            ReviewCount = p.Reviews?.Count ?? 0
+            ReviewCount = p.Reviews?.Count ?? 0,
+            CategoryName = p.Category?.Name
         };
-
-        // Populate CategoryName for this product
-        if (resp.CategoryId != Guid.Empty)
-        {
-            var cat = await _service.GetCategoryByIdAsync(resp.CategoryId);
-            resp.CategoryName = cat?.Name;
-        }
 
         return Ok(resp);
     }
@@ -515,13 +493,13 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> UpdateImage(Guid id, [FromBody] ProductImageRequest req)
     {
         var existing = await _service.GetImageByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "Image not found"));
         existing.MediaId = req.MediaId;
         existing.IsPrimary = req.IsPrimary;
         existing.DisplayOrder = req.DisplayOrder;
         existing.UpdatedAt = DateTime.UtcNow;
         await _service.UpdateImageAsync(existing);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Image updated successfully", existing.Id));
     }
 
     [HttpGet("products/{productId}/images")]
@@ -565,12 +543,12 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> UpdateReview(Guid id, [FromBody] ProductReviewRequest req)
     {
         var existing = await _service.GetReviewByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "Review not found"));
         existing.Rating = req.Rating;
         existing.Comment = req.Comment;
         existing.UpdatedAt = DateTime.UtcNow;
         await _service.UpdateReviewAsync(existing);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Review updated successfully", existing.Id));
     }
 
     [HttpGet("products/{productId}/reviews")]
@@ -592,7 +570,7 @@ public class ProductController : ControllerBase
 
     // Search
     [HttpGet("products/search")]
-    public async Task<IActionResult> SearchProducts([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] Guid? categoryId, [FromQuery] string? sort, [FromQuery] bool? isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> SearchProducts([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] Guid? categoryId, [FromQuery] bool? isActive, [FromQuery] string? sort, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var paged = await _service.SearchProductsAsync(name, minPrice, maxPrice, categoryId, sort, isActive, pageNumber, pageSize);
         var items = paged.Items.Select(p => new ProductResponse
@@ -610,44 +588,9 @@ public class ProductController : ControllerBase
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
-            ReviewCount = p.Reviews?.Count ?? 0
+            ReviewCount = p.Reviews?.Count ?? 0,
+            CategoryName = p.Category?.Name
         }).ToList();
-
-        // Populate CategoryName for each product in the search results
-        var searchCategoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
-        var searchCategoryMap = new Dictionary<Guid, string?>();
-        foreach (var cid in searchCategoryIds)
-        {
-            var c = await _service.GetCategoryByIdAsync(cid);
-            searchCategoryMap[cid] = c?.Name;
-        }
-
-        foreach (var it in items)
-        {
-            if (it.CategoryId != Guid.Empty && searchCategoryMap.TryGetValue(it.CategoryId, out var cname))
-            {
-                it.CategoryName = cname;
-            }
-        }
-
-        // (CategoryName already populated above)
-
-        // Populate CategoryName for each product
-        var categoryIds = items.Where(i => i.CategoryId != Guid.Empty).Select(i => i.CategoryId).Distinct().ToList();
-        var categoryMap = new Dictionary<Guid, string?>();
-        foreach (var cid in categoryIds)
-        {
-            var c = await _service.GetCategoryByIdAsync(cid);
-            categoryMap[cid] = c?.Name;
-        }
-
-        foreach (var it in items)
-        {
-            if (it.CategoryId != Guid.Empty && categoryMap.TryGetValue(it.CategoryId, out var cname))
-            {
-                it.CategoryName = cname;
-            }
-        }
 
         var result = new PagedResult<ProductResponse>
         {

@@ -59,12 +59,23 @@ public class ProductRepository : IProductRepository
 
     public async Task<Product?> GetProductByIdAsync(Guid id)
     {
-        return await _db.Products.Include(p => p.Images).Include(p => p.Reviews).FirstOrDefaultAsync(p => p.Id == id);
+        return await _db.Products
+            .Include(p => p.Images)
+            .Include(p => p.Reviews)
+            .Include(p => p.Category)
+            .FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task<PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize)
     {
-        var q = _db.Products.Include(p => p.Images).Include(p => p.Reviews).AsQueryable();
+        // include related data and exclude soft-deleted products so pagination and counts are correct
+        var q = _db.Products
+            .Include(p => p.Images)
+            .Include(p => p.Reviews)
+            .Include(p => p.Category)
+            .Where(p => !p.IsDeleted)
+            .AsQueryable();
+
         var total = await q.CountAsync();
         var items = await q.OrderByDescending(p => p.CreatedAt).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
         return new PagedResult<Product> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
@@ -139,7 +150,13 @@ public class ProductRepository : IProductRepository
     // Search
     public async Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize)
     {
-        var q = _db.Products.Include(p => p.Images).Include(p => p.Reviews).AsQueryable();
+        // include related data and exclude soft-deleted products so pagination and counts are correct
+        var q = _db.Products
+            .Include(p => p.Images)
+            .Include(p => p.Reviews)
+            .Include(p => p.Category)
+            .Where(p => !p.IsDeleted)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => p.Name.Contains(name));
         if (minPrice.HasValue) q = q.Where(p => p.Price >= minPrice.Value);
