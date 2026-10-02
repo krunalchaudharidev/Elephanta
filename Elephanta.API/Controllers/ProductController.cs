@@ -7,6 +7,7 @@ using Elephanta.Domain.Entities;
 using Elephanta.Application.Features.ProductFaqs.DTOs;
 using Elephanta.Application.Features.ProductFaqs.Interfaces;
 using Elephanta.Application.Common;
+using Elephanta.Application.Features.Media.Interfaces;
 
 namespace Elephanta.API.Controllers;
 
@@ -16,11 +17,13 @@ public class ProductController : ControllerBase
 {
     private readonly IProductService _service;
     private readonly IProductFaqService _faqService;
+    private readonly IMediaService _mediaService;
 
-    public ProductController(IProductService service, IProductFaqService faqService)
+    public ProductController(IProductService service, IProductFaqService faqService, IMediaService mediaService)
     {
         _service = service;
         _faqService = faqService;
+        _mediaService = mediaService;
     }
 
     // Categories
@@ -321,7 +324,7 @@ public class ProductController : ControllerBase
                     Id = Guid.NewGuid(),
                     ProductId = added.Id,
                     MediaId = imgId,
-                    IsPrimary = order == 0,
+                    IsPrimary = (req.PrimaryImageId.HasValue && req.PrimaryImageId.Value == imgId) || order == 0,
                     DisplayOrder = order,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -346,7 +349,8 @@ public class ProductController : ControllerBase
             IsFeatured = added.IsFeatured,
             CategoryId = added.CategoryId,
             ImageIds = (req.ImageIds != null && req.ImageIds.Count > 0) ? req.ImageIds : (added.Images?.Select(i => i.Id).ToList() ?? new List<Guid>()),
-            ReviewCount = added.Reviews?.Count ?? 0
+            ReviewCount = added.Reviews?.Count ?? 0,
+            PrimaryImageId = req.PrimaryImageId.HasValue ? req.PrimaryImageId : added.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId
         };
 
         return CreatedAtAction(nameof(GetProduct), new { id = resp.Id }, resp);
@@ -363,6 +367,7 @@ public class ProductController : ControllerBase
         var existing = await _service.GetProductByIdAsync(id);
         if (existing == null) return NotFound(new ApiResponse(false, "Product not found"));
 
+        // Apply partial updates for scalar fields
         if (req.Name != null) existing.Name = req.Name;
         if (req.Slug != null) existing.Slug = req.Slug;
         if (req.SKU != null) existing.SKU = req.SKU;
@@ -374,9 +379,59 @@ public class ProductController : ControllerBase
         if (req.IsActive.HasValue) existing.IsActive = req.IsActive.Value;
         if (req.IsFeatured.HasValue) existing.IsFeatured = req.IsFeatured.Value;
         if (req.CategoryId.HasValue) existing.CategoryId = req.CategoryId.Value;
-        existing.UpdatedAt = DateTime.UtcNow;
 
+        // Handle image additions: create ProductImage records linking this product to media
+        if (req.ImageIds != null && req.ImageIds.Count > 0)
+        {
+            var currentImages = await _service.GetImagesByProductAsync(existing.Id);
+            var order = currentImages?.Count ?? 0;
+            var existingMediaIds = currentImages?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToHashSet() ?? new HashSet<Guid>();
+
+            foreach (var mediaId in req.ImageIds.Distinct())
+            {
+                if (existingMediaIds.Contains(mediaId)) continue;
+
+                var pi = new ProductImage
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = existing.Id,
+                    MediaId = mediaId,
+                    IsPrimary = order == 0,
+                    DisplayOrder = order,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _service.AddImageAsync(pi);
+                existingMediaIds.Add(mediaId);
+                order++;
+            }
+
+            // Handle primary image selection by media id
+            if (req.PrimaryImageId.HasValue)
+            {
+                // First, unset any existing primary images for this product
+                var pImg = currentImages.FirstOrDefault(i => i.IsPrimary);
+                if (pImg != null)
+                {
+                    pImg.IsPrimary = false;
+                    pImg.UpdatedAt = DateTime.UtcNow;
+                    await _service.UpdateImageAsync(pImg);
+                }
+
+                // Then set the selected image (by media id) as primary
+                var img = await _service.GetImageByMediaIdAsync(req.PrimaryImageId.Value);
+                if (img != null)
+                {
+                    img.IsPrimary = true;
+                    img.UpdatedAt = DateTime.UtcNow;
+                    await _service.UpdateImageAsync(img);
+                }
+            }
+        }
+
+        existing.UpdatedAt = DateTime.UtcNow;
         await _service.UpdateProductAsync(existing);
+
         return Ok(new ApiResponse(true, "Product updated successfully", existing.Id));
     }
 
@@ -419,7 +474,8 @@ public class ProductController : ControllerBase
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
-            CategoryName = p.Category?.Name
+            CategoryName = p.Category?.Name,
+            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId
         }).ToList();
 
         var result = new PagedResult<ProductResponse>
@@ -454,7 +510,8 @@ public class ProductController : ControllerBase
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
-            CategoryName = p.Category?.Name
+            CategoryName = p.Category?.Name,
+            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId
         };
 
         return Ok(resp);
@@ -589,7 +646,8 @@ public class ProductController : ControllerBase
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
-            CategoryName = p.Category?.Name
+            CategoryName = p.Category?.Name,
+            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId
         }).ToList();
 
         var result = new PagedResult<ProductResponse>

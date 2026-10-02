@@ -40,6 +40,9 @@ public class ProductRequest
 
     // Optional media ids to create ProductImage records for the new product
     public List<Guid> ImageIds { get; set; } = new List<Guid>();
+
+    // Optional: media id to mark as primary for this product's images
+    public Guid? PrimaryImageId { get; set; }
 }
 
 public class ProductUpdateRequest
@@ -69,8 +72,10 @@ public class ProductUpdateRequest
 
     public Guid? CategoryId { get; set; }
 
-    // Optional media ids to create or update ProductImage records
     public List<Guid>? ImageIds { get; set; }
+
+    // Optional: media id to mark as primary for this product's images
+    public Guid? PrimaryImageId { get; set; }
 }
 
 public class ProductResponse
@@ -105,4 +110,7 @@ public class ProductResponse
 
     // Optional: include the category name for convenience in responses
     public string? CategoryName { get; set; }
+
+    // Optional: primary image media id for the product
+    public Guid? PrimaryImageId { get; set; }
 }
