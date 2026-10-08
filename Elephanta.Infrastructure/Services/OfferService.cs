@@ -20,6 +20,8 @@ public class OfferService : IOfferService
     public Task UpdateOfferAsync(Offer offer) => _repo.UpdateOfferAsync(offer);
     public Task<Offer?> GetOfferByIdAsync(Guid id) => _repo.GetOfferByIdAsync(id);
     public Task<PagedResult<Offer>> GetOffersAsync(int pageNumber, int pageSize) => _repo.GetOffersAsync(pageNumber, pageSize);
+    public Task<PagedResult<Offer>> SearchOffersAsync(string? name, string? code, string? sort, bool? isActive, int pageNumber, int pageSize)
+        => _repo.SearchOffersAsync(name, code, sort, isActive, pageNumber, pageSize);
 
     public Task<OfferImage> AddImageAsync(OfferImage img) => _repo.AddImageAsync(img);
     public Task UpdateImageAsync(OfferImage img) => _repo.UpdateImageAsync(img);

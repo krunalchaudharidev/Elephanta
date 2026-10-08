@@ -5,10 +5,7 @@ using System.Threading.Tasks;
 using Elephanta.Application.Features.Media.Interfaces;
 using Elephanta.Application.Features.Media.DTOs;
 using Elephanta.Domain.Entities;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
+using ImageMagick;
 
 namespace Elephanta.Infrastructure.Services;
 
@@ -38,30 +35,46 @@ public class MediaService : IMediaService
         var relativePath = Path.Combine("uploads", folder, fileName);
         var fullPath = Path.Combine(_contentRoot, relativePath);
 
-        // Save file (optionally compress)
+        // Save file (optionally compress). Use Magick.NET (ImageMagick) when compression is requested.
         if (dto.IsCompress)
         {
-            // Use ImageSharp to re-encode with compression settings
             dto.Content.Position = 0;
-            using var image = await Image.LoadAsync(dto.Content);
-            await using var outFs = File.Create(fullPath);
+
+            // Read uploaded stream into memory first
+            await using var inMs = new MemoryStream();
+            await dto.Content.CopyToAsync(inMs);
+            inMs.Position = 0;
+
+            using var image = new MagickImage(inMs);
 
             var lower = dto.ContentType?.ToLower() ?? string.Empty;
+
+            // Basic compression strategy: strip metadata, optionally reduce quality for JPEG,
+            // and optimize PNG. You can tune Quality and other settings as needed.
+            image.Strip();
+
             if (lower.Contains("png"))
             {
-                var encoder = new PngEncoder()
-                {
-                    CompressionLevel = PngCompressionLevel.Level6
-                };
-                await image.SaveAsPngAsync(outFs, encoder);
+                // For PNG, strip metadata and write as PNG. For further optimization consider
+                // using external tools (pngquant/oxipng) or Magick.NET advanced options.
+                image.Format = MagickFormat.Png;
+                image.Write(fullPath, MagickFormat.Png);
             }
             else
             {
-                var encoder = new JpegEncoder()
+                // For JPEG and others, set quality and write as JPEG where appropriate
+                image.Quality = 75; // adjust quality as needed
+
+                if (lower.Contains("jpeg") || lower.Contains("jpg"))
                 {
-                    Quality = 75
-                };
-                await image.SaveAsJpegAsync(outFs, encoder);
+                    image.Format = MagickFormat.Jpeg;
+                    image.Write(fullPath, MagickFormat.Jpeg);
+                }
+                else
+                {
+                    // Fallback: write using original format
+                    image.Write(fullPath);
+                }
             }
         }
         else

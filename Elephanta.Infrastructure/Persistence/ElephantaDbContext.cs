@@ -41,6 +41,7 @@ public class ElephantaDbContext : DbContext
 
     public DbSet<Offer> Offers { get; set; } = null!;
     public DbSet<OfferImage> OfferImages { get; set; } = null!;
+    public DbSet<OfferUsage> OfferUsages { get; set; } = null!;
     public DbSet<CartItem> CartItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -54,6 +55,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CartItemConfiguration());
         modelBuilder.ApplyConfiguration(new OfferConfiguration());
         modelBuilder.ApplyConfiguration(new OfferImageConfiguration());
+        modelBuilder.ApplyConfiguration(new OfferUsageConfiguration());
         modelBuilder.ApplyConfiguration(new ProductImageConfiguration());
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
         modelBuilder.ApplyConfiguration(new ProductReviewConfiguration());
@@ -69,6 +71,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.Entity<CartItem>();
         modelBuilder.Entity<Offer>();
         modelBuilder.Entity<OfferImage>();
+        modelBuilder.Entity<OfferUsage>();
         modelBuilder.Entity<ProductImage>();
         modelBuilder.Entity<Product>();
         modelBuilder.Entity<ProductReview>();

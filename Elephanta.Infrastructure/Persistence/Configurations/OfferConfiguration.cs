@@ -31,5 +31,7 @@ public class OfferConfiguration : IEntityTypeConfiguration<Offer>
         builder.Property(x => x.MaximumDiscountAmount).HasColumnType("decimal(18,4)");
 
         builder.Property(x => x.IsActive).HasDefaultValue(true);
+        builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+        builder.Property(x => x.DeletedAt).IsRequired(false);
     }
 }

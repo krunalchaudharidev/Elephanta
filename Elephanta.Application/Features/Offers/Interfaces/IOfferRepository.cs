@@ -12,6 +12,7 @@ public interface IOfferRepository
     Task UpdateOfferAsync(Offer offer);
     Task<Offer?> GetOfferByIdAsync(Guid id);
     Task<PagedResult<Offer>> GetOffersAsync(int pageNumber, int pageSize);
+    Task<PagedResult<Offer>> SearchOffersAsync(string? name, string? code, string? sort, bool? isActive, int pageNumber, int pageSize);
 
     Task<OfferImage> AddImageAsync(OfferImage img);
     Task UpdateImageAsync(OfferImage img);

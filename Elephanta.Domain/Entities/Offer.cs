@@ -31,4 +31,12 @@ public class Offer : BaseEntity
 
     // Navigation
     public ICollection<OfferImage> Images { get; set; } = new List<OfferImage>();
+
+    // Usage records for this offer
+    public ICollection<OfferUsage>? Usages { get; set; }
+
+    // Soft-delete
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
 }
