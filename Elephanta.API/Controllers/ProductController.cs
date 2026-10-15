@@ -91,9 +91,9 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet("categories")]
-    public async Task<IActionResult> GetCategories([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetCategories([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? name = null, [FromQuery] string? sort = null, [FromQuery] bool? isActive = null)
     {
-        var paged = await _service.GetCategoriesAsync(pageNumber, pageSize);
+        var paged = await _service.GetCategoriesAsync(pageNumber, pageSize, name, sort, isActive);
         var items = paged.Items.Select(c => new CategoryResponse
         {
             Id = c.Id,
@@ -475,7 +475,8 @@ public class ProductController : ControllerBase
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
             CategoryName = p.Category?.Name,
-            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId
+            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId,
+            IsCategoryActive = p.Category?.IsActive ?? false
         }).ToList();
 
         var result = new PagedResult<ProductResponse>
@@ -511,7 +512,8 @@ public class ProductController : ControllerBase
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
             CategoryName = p.Category?.Name,
-            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId
+            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId,
+            IsCategoryActive = p.Category?.IsActive ?? false
         };
 
         return Ok(resp);
@@ -627,9 +629,9 @@ public class ProductController : ControllerBase
 
     // Search
     [HttpGet("products/search")]
-    public async Task<IActionResult> SearchProducts([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] Guid? categoryId, [FromQuery] bool? isActive, [FromQuery] string? sort, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> SearchProducts([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] Guid? categoryId, [FromQuery] bool? isActive, [FromQuery] string? sort, [FromQuery] bool? isFeatured = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var paged = await _service.SearchProductsAsync(name, minPrice, maxPrice, categoryId, sort, isActive, pageNumber, pageSize);
+        var paged = await _service.SearchProductsAsync(name, minPrice, maxPrice, categoryId, sort, isActive, isFeatured, pageNumber, pageSize);
         var items = paged.Items.Select(p => new ProductResponse
         {
             Id = p.Id,
@@ -647,7 +649,8 @@ public class ProductController : ControllerBase
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
             CategoryName = p.Category?.Name,
-            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId
+            PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId,
+            IsCategoryActive = p.Category?.IsActive ?? false
         }).ToList();
 
         var result = new PagedResult<ProductResponse>

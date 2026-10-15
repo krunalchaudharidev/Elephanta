@@ -13,7 +13,7 @@ public interface IProductService
     Task UpdateCategoryAsync(Category category);
     Task<Category?> GetCategoryByIdAsync(Guid id);
     Task<Category?> GetCategoryByMediaIdAsync(Guid mediaId);
-    Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize);
+    Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize, string? name, string? sort, bool? isActive);
 
     // Product
     Task<Product> AddProductAsync(Product product);
@@ -36,7 +36,7 @@ public interface IProductService
     Task<List<ProductReview>> GetReviewsByProductAsync(Guid productId);
 
     // Search
-    Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize);
+    Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, bool? isFeatured, int pageNumber, int pageSize);
 
     // Category relationship / deletion helpers
     Task<bool> CategoryHasChildrenAsync(Guid categoryId);

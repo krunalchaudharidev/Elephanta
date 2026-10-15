@@ -43,6 +43,7 @@ public class ElephantaDbContext : DbContext
     public DbSet<OfferImage> OfferImages { get; set; } = null!;
     public DbSet<OfferUsage> OfferUsages { get; set; } = null!;
     public DbSet<CartItem> CartItems { get; set; } = null!;
+    public DbSet<WebsiteSetting> WebsiteSettings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,6 +65,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new MediaConfiguration());
         modelBuilder.ApplyConfiguration(new ProductFaqConfiguration());
         modelBuilder.ApplyConfiguration(new CustomerSupportRequestConfiguration());
+        modelBuilder.ApplyConfiguration(new WebsiteSettingConfiguration());
         modelBuilder.Entity<User>();
         modelBuilder.Entity<Role>();
         modelBuilder.Entity<UserRole>();
@@ -80,6 +82,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.Entity<Media>();
         modelBuilder.Entity<ProductFaq>();
         modelBuilder.Entity<CustomerSupportRequest>();
+        modelBuilder.Entity<WebsiteSetting>();
     }
 
     public override int SaveChanges()

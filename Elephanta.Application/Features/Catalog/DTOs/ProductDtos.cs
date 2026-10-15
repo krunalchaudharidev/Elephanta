@@ -113,4 +113,6 @@ public class ProductResponse
 
     // Optional: primary image media id for the product
     public Guid? PrimaryImageId { get; set; }
+
+    public bool? IsCategoryActive { get; set; }
 }

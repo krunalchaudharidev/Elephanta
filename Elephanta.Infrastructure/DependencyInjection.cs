@@ -9,6 +9,7 @@ using Elephanta.Application.Features.Support.Interfaces;
 using Elephanta.Application.Features.Cart.Interfaces;
 using Elephanta.Infrastructure.Services;
 using Elephanta.Application.Features.Media.Interfaces;
+using Elephanta.Application.Features.WebsiteSettings.Interfaces;
 
 namespace Elephanta.Infrastructure;
 
@@ -33,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IProductFaqService, ProductFaqService>();
         services.AddScoped<ICustomerSupportService, CustomerSupportService>();
+        services.AddScoped<IWebsiteSettingRepository, WebsiteSettingRepository>();
+        services.AddScoped<IWebsiteSettingService, WebsiteSettingService>();
 
         return services;
     }

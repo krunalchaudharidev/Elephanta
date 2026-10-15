@@ -35,11 +35,27 @@ public class ProductRepository : IProductRepository
         return await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
     }
 
-    public async Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize)
+    public async Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize, string? name, string? sort, bool? isActive)
     {
         var q = _db.Categories.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name)) q = q.Where(c => c.Name.Contains(name));
+        if (isActive.HasValue) q = q.Where(c => c.IsActive == isActive.Value);
+
+        // sorting
+        q = sort?.ToLower() switch
+        {
+            "nameasc" => q.OrderBy(c => c.Name),
+            "namedesc" => q.OrderByDescending(c => c.Name),
+            "orderasc" => q.OrderBy(c => c.DisplayOrder),
+            "orderdesc" => q.OrderByDescending(c => c.DisplayOrder),
+            "createdatasc" => q.OrderBy(c => c.CreatedAt),
+            "createdatdesc" => q.OrderByDescending(c => c.CreatedAt),
+            _ => q.OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name)
+        };
+
         var total = await q.CountAsync();
-        var items = await q.OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+        var items = await q.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
         return new PagedResult<Category> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
     }
 
@@ -148,7 +164,7 @@ public class ProductRepository : IProductRepository
     }
 
     // Search
-    public async Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, int pageNumber, int pageSize)
+    public async Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, bool? isFeatured, int pageNumber, int pageSize)
     {
         // include related data and exclude soft-deleted products so pagination and counts are correct
         var q = _db.Products
@@ -162,7 +178,13 @@ public class ProductRepository : IProductRepository
         if (minPrice.HasValue) q = q.Where(p => p.Price >= minPrice.Value);
         if (maxPrice.HasValue) q = q.Where(p => p.Price <= maxPrice.Value);
         if (categoryId.HasValue) q = q.Where(p => p.CategoryId == categoryId.Value);
-        if (isActive.HasValue) q = q.Where(p => p.IsActive == isActive.Value);
+        if (isActive.HasValue)
+        {
+            // Only include products where the product's IsActive matches and, when a category exists,
+            // the category's IsActive also matches the requested value.
+            q = q.Where(p => p.IsActive == isActive.Value && (p.Category == null || p.Category.IsActive == isActive.Value));
+        }
+        if (isFeatured.HasValue) q = q.Where(p => p.IsFeatured == isFeatured.Value);
 
         // sorting
         q = sort?.ToLower() switch
@@ -171,6 +193,8 @@ public class ProductRepository : IProductRepository
             "pricedesc" => q.OrderByDescending(p => p.Price),
             "nameasc" => q.OrderBy(p => p.Name),
             "namedesc" => q.OrderByDescending(p => p.Name),
+            "createdatasc" => q.OrderBy(p => p.CreatedAt),
+            "createdatdesc" => q.OrderByDescending(p => p.CreatedAt),
             _ => q.OrderByDescending(p => p.CreatedAt)
         };
 
