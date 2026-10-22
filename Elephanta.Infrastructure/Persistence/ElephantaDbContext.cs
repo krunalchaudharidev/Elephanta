@@ -43,6 +43,12 @@ public class ElephantaDbContext : DbContext
     public DbSet<OfferImage> OfferImages { get; set; } = null!;
     public DbSet<OfferUsage> OfferUsages { get; set; } = null!;
     public DbSet<CartItem> CartItems { get; set; } = null!;
+    public DbSet<Order> Orders { get; set; } = null!;
+    public DbSet<OrderItem> OrderItems { get; set; } = null!;
+    public DbSet<OrderAddress> OrderAddresses { get; set; } = null!;
+    public DbSet<Payment> Payments { get; set; } = null!;
+    public DbSet<Shipment> Shipments { get; set; } = null!;
+    public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; } = null!;
     public DbSet<WebsiteSetting> WebsiteSettings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -57,6 +63,12 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new OfferConfiguration());
         modelBuilder.ApplyConfiguration(new OfferImageConfiguration());
         modelBuilder.ApplyConfiguration(new OfferUsageConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new PaymentConfiguration());
+        modelBuilder.ApplyConfiguration(new ShipmentConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderStatusHistoryConfiguration());
         modelBuilder.ApplyConfiguration(new ProductImageConfiguration());
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
         modelBuilder.ApplyConfiguration(new ProductReviewConfiguration());
@@ -74,6 +86,12 @@ public class ElephantaDbContext : DbContext
         modelBuilder.Entity<Offer>();
         modelBuilder.Entity<OfferImage>();
         modelBuilder.Entity<OfferUsage>();
+        modelBuilder.Entity<Order>();
+        modelBuilder.Entity<OrderItem>();
+        modelBuilder.Entity<OrderAddress>();
+        modelBuilder.Entity<Payment>();
+        modelBuilder.Entity<Shipment>();
+        modelBuilder.Entity<OrderStatusHistory>();
         modelBuilder.Entity<ProductImage>();
         modelBuilder.Entity<Product>();
         modelBuilder.Entity<ProductReview>();

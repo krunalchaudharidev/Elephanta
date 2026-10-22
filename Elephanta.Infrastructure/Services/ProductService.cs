@@ -17,6 +17,7 @@ public class ProductService : IProductService
     public Task UpdateCategoryAsync(Category category) => _repo.UpdateCategoryAsync(category);
     public Task<Category?> GetCategoryByIdAsync(Guid id) => _repo.GetCategoryByIdAsync(id);
     public Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize, string? name, string? sort, bool? isActive) => _repo.GetCategoriesAsync(pageNumber, pageSize, name, sort, isActive);
+    public Task<Dictionary<Guid, int>> GetProductCountsByCategoryAsync(IEnumerable<Guid> categoryIds) => _repo.GetProductCountsByCategoryAsync(categoryIds);
 
     public Task<Product> AddProductAsync(Product product) => _repo.AddProductAsync(product);
     public Task UpdateProductAsync(Product product) => _repo.UpdateProductAsync(product);
@@ -36,8 +37,8 @@ public class ProductService : IProductService
     public Task<ProductReview?> GetReviewByIdAsync(Guid id) => _repo.GetReviewByIdAsync(id);
     public Task<List<ProductReview>> GetReviewsByProductAsync(Guid productId) => _repo.GetReviewsByProductAsync(productId);
 
-    public Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, bool? isFeatured, int pageNumber, int pageSize)
-        => _repo.SearchProductsAsync(name, minPrice, maxPrice, categoryId, sort, isActive, isFeatured, pageNumber, pageSize);
+    public Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, List<Guid>? categoryIds, string? sort, bool? isActive, bool? isFeatured, int? minRating, bool? isStockAvailable, int pageNumber, int pageSize)
+        => _repo.SearchProductsAsync(name, minPrice, maxPrice, categoryIds, sort, isActive, isFeatured, minRating, isStockAvailable, pageNumber, pageSize);
 
     public Task<bool> CategoryHasChildrenAsync(Guid categoryId) => _repo.CategoryHasChildrenAsync(categoryId);
     public Task<bool> IsCategoryLinkedToProductsAsync(Guid categoryId) => _repo.IsCategoryLinkedToProductsAsync(categoryId);

@@ -22,6 +22,10 @@ public class Product : BaseEntity
 
     public int StockQuantity { get; set; }
 
+    public int ReservedQuantity { get; set; }
+
+    public int SoldQuantity { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public bool IsFeatured { get; set; } = false;

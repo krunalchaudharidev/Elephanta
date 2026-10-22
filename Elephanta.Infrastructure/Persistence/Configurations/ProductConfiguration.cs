@@ -34,6 +34,14 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(x => x.StockQuantity).HasColumnType("integer");
 
+        builder.Property(x => x.ReservedQuantity)
+            .HasColumnType("integer")
+            .HasDefaultValue(0);
+
+        builder.Property(x => x.SoldQuantity)
+            .HasColumnType("integer")
+            .HasDefaultValue(0);
+
         builder.Property(x => x.IsActive).HasColumnType("boolean");
 
         builder.Property(x => x.IsFeatured).HasColumnType("boolean");

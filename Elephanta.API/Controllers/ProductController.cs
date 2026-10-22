@@ -94,6 +94,7 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> GetCategories([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? name = null, [FromQuery] string? sort = null, [FromQuery] bool? isActive = null)
     {
         var paged = await _service.GetCategoriesAsync(pageNumber, pageSize, name, sort, isActive);
+        var productCounts = await _service.GetProductCountsByCategoryAsync(paged.Items.Select(c => c.Id));
         var items = paged.Items.Select(c => new CategoryResponse
         {
             Id = c.Id,
@@ -104,25 +105,9 @@ public class ProductController : ControllerBase
             DisplayOrder = c.DisplayOrder,
             IsActive = c.IsActive,
             ParentCategoryId = c.ParentCategoryId,
-            ParentCategoryName = null
+            ParentCategoryName = c.ParentCategory?.Name,
+            ProductCount = productCounts.GetValueOrDefault(c.Id)
         }).ToList();
-
-        // Populate ParentCategoryName for items that have a parent
-        var parentIds = items.Where(i => i.ParentCategoryId.HasValue).Select(i => i.ParentCategoryId!.Value).Distinct().ToList();
-        var parentMap = new Dictionary<Guid, string?>();
-        foreach (var pid in parentIds)
-        {
-            var parent = await _service.GetCategoryByIdAsync(pid);
-            parentMap[pid] = parent?.Name;
-        }
-
-        foreach (var it in items)
-        {
-            if (it.ParentCategoryId.HasValue && parentMap.TryGetValue(it.ParentCategoryId.Value, out var pname))
-            {
-                it.ParentCategoryName = pname;
-            }
-        }
 
         var result = new PagedResult<CategoryResponse>
         {
@@ -140,6 +125,8 @@ public class ProductController : ControllerBase
     {
         var c = await _service.GetCategoryByIdAsync(id);
         if (c == null) return NotFound();
+        var productCounts = await _service.GetProductCountsByCategoryAsync(new[] { c.Id });
+
         var resp = new CategoryResponse
         {
             Id = c.Id,
@@ -149,13 +136,10 @@ public class ProductController : ControllerBase
             MediaId = c.MediaId,
             DisplayOrder = c.DisplayOrder,
             IsActive = c.IsActive,
-            ParentCategoryId = c.ParentCategoryId
+            ParentCategoryId = c.ParentCategoryId,
+            ParentCategoryName = c.ParentCategory?.Name,
+            ProductCount = productCounts.GetValueOrDefault(c.Id)
         };
-        if (resp.ParentCategoryId.HasValue)
-        {
-            var parent = await _service.GetCategoryByIdAsync(resp.ParentCategoryId.Value);
-            resp.ParentCategoryName = parent?.Name;
-        }
 
         return Ok(resp);
     }
@@ -345,6 +329,8 @@ public class ProductController : ControllerBase
             Price = added.Price,
             CompareAtPrice = added.CompareAtPrice,
             StockQuantity = added.StockQuantity,
+            ReservedQuantity = added.ReservedQuantity,
+            SoldQuantity = added.SoldQuantity,
             IsActive = added.IsActive,
             IsFeatured = added.IsFeatured,
             CategoryId = added.CategoryId,
@@ -469,11 +455,14 @@ public class ProductController : ControllerBase
             Price = p.Price,
             CompareAtPrice = p.CompareAtPrice,
             StockQuantity = p.StockQuantity,
+            ReservedQuantity = p.ReservedQuantity,
+            SoldQuantity = p.SoldQuantity,
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
+            AverageRating = p.Reviews?.Count > 0 ? (decimal)p.Reviews.Average(r => r.Rating) : 0,
             CategoryName = p.Category?.Name,
             PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId,
             IsCategoryActive = p.Category?.IsActive ?? false
@@ -506,11 +495,14 @@ public class ProductController : ControllerBase
             Price = p.Price,
             CompareAtPrice = p.CompareAtPrice,
             StockQuantity = p.StockQuantity,
+            ReservedQuantity = p.ReservedQuantity,
+            SoldQuantity = p.SoldQuantity,
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
+            AverageRating = p.Reviews?.Count > 0 ? (decimal)p.Reviews.Average(r => r.Rating) : 0,
             CategoryName = p.Category?.Name,
             PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId,
             IsCategoryActive = p.Category?.IsActive ?? false
@@ -629,9 +621,9 @@ public class ProductController : ControllerBase
 
     // Search
     [HttpGet("products/search")]
-    public async Task<IActionResult> SearchProducts([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] Guid? categoryId, [FromQuery] bool? isActive, [FromQuery] string? sort, [FromQuery] bool? isFeatured = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> SearchProducts([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] List<Guid>? categoryIds, [FromQuery] bool? isActive, [FromQuery] string? sort, [FromQuery] bool? isFeatured = null, [FromQuery] int? minRating = null, [FromQuery] bool? isStockAvailable = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var paged = await _service.SearchProductsAsync(name, minPrice, maxPrice, categoryId, sort, isActive, isFeatured, pageNumber, pageSize);
+        var paged = await _service.SearchProductsAsync(name, minPrice, maxPrice, categoryIds, sort, isActive, isFeatured, minRating, isStockAvailable, pageNumber, pageSize);
         var items = paged.Items.Select(p => new ProductResponse
         {
             Id = p.Id,
@@ -643,11 +635,14 @@ public class ProductController : ControllerBase
             Price = p.Price,
             CompareAtPrice = p.CompareAtPrice,
             StockQuantity = p.StockQuantity,
+            ReservedQuantity = p.ReservedQuantity,
+            SoldQuantity = p.SoldQuantity,
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
+            AverageRating = p.Reviews?.Count > 0 ? (decimal)p.Reviews.Average(r => r.Rating) : 0,
             CategoryName = p.Category?.Name,
             PrimaryImageId = p.Images?.FirstOrDefault(i => i.IsPrimary && i.MediaId.HasValue)?.MediaId,
             IsCategoryActive = p.Category?.IsActive ?? false

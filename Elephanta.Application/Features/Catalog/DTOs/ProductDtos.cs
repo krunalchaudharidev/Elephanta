@@ -98,6 +98,10 @@ public class ProductResponse
 
     public int StockQuantity { get; set; }
 
+    public int ReservedQuantity { get; set; }
+
+    public int SoldQuantity { get; set; }
+
     public bool IsActive { get; set; }
 
     public bool IsFeatured { get; set; }
@@ -107,6 +111,8 @@ public class ProductResponse
     public List<Guid> ImageIds { get; set; } = new List<Guid>();
 
     public int ReviewCount { get; set; }
+
+    public decimal AverageRating { get; set; }
 
     // Optional: include the category name for convenience in responses
     public string? CategoryName { get; set; }

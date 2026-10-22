@@ -43,4 +43,6 @@ public class CategoryResponse
     public Guid? ParentCategoryId { get; set; }
 
     public string? ParentCategoryName { get; set; }
+
+    public int ProductCount { get; set; }
 }

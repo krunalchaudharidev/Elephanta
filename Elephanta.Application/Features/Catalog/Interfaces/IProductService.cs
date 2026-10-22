@@ -14,6 +14,7 @@ public interface IProductService
     Task<Category?> GetCategoryByIdAsync(Guid id);
     Task<Category?> GetCategoryByMediaIdAsync(Guid mediaId);
     Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize, string? name, string? sort, bool? isActive);
+    Task<Dictionary<Guid, int>> GetProductCountsByCategoryAsync(IEnumerable<Guid> categoryIds);
 
     // Product
     Task<Product> AddProductAsync(Product product);
@@ -36,7 +37,7 @@ public interface IProductService
     Task<List<ProductReview>> GetReviewsByProductAsync(Guid productId);
 
     // Search
-    Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, bool? isFeatured, int pageNumber, int pageSize);
+    Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, List<Guid>? categoryIds, string? sort, bool? isActive, bool? isFeatured, int? minRating, bool? isStockAvailable, int pageNumber, int pageSize);
 
     // Category relationship / deletion helpers
     Task<bool> CategoryHasChildrenAsync(Guid categoryId);

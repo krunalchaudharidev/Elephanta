@@ -32,12 +32,14 @@ public class ProductRepository : IProductRepository
 
     public async Task<Category?> GetCategoryByIdAsync(Guid id)
     {
-        return await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
+        return await _db.Categories.Include(c => c.ParentCategory).FirstOrDefaultAsync(c => c.Id == id);
     }
 
     public async Task<PagedResult<Category>> GetCategoriesAsync(int pageNumber, int pageSize, string? name, string? sort, bool? isActive)
     {
-        var q = _db.Categories.AsQueryable();
+        var q = _db.Categories
+            .Include(c => c.ParentCategory)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(name)) q = q.Where(c => c.Name.Contains(name));
         if (isActive.HasValue) q = q.Where(c => c.IsActive == isActive.Value);
@@ -57,6 +59,18 @@ public class ProductRepository : IProductRepository
         var total = await q.CountAsync();
         var items = await q.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
         return new PagedResult<Category> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
+    }
+
+    public async Task<Dictionary<Guid, int>> GetProductCountsByCategoryAsync(IEnumerable<Guid> categoryIds)
+    {
+        var ids = categoryIds.ToList();
+        if (ids.Count == 0) return new Dictionary<Guid, int>();
+
+        return await _db.Products
+            .Where(p => !p.IsDeleted && ids.Contains(p.CategoryId))
+            .GroupBy(p => p.CategoryId)
+            .Select(group => new { CategoryId = group.Key, ProductCount = group.Count() })
+            .ToDictionaryAsync(item => item.CategoryId, item => item.ProductCount);
     }
 
     // Product
@@ -164,7 +178,7 @@ public class ProductRepository : IProductRepository
     }
 
     // Search
-    public async Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, Guid? categoryId, string? sort, bool? isActive, bool? isFeatured, int pageNumber, int pageSize)
+    public async Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, List<Guid>? categoryIds, string? sort, bool? isActive, bool? isFeatured, int? minRating, bool? isStockAvailable, int pageNumber, int pageSize)
     {
         // include related data and exclude soft-deleted products so pagination and counts are correct
         var q = _db.Products
@@ -177,7 +191,7 @@ public class ProductRepository : IProductRepository
         if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => p.Name.Contains(name));
         if (minPrice.HasValue) q = q.Where(p => p.Price >= minPrice.Value);
         if (maxPrice.HasValue) q = q.Where(p => p.Price <= maxPrice.Value);
-        if (categoryId.HasValue) q = q.Where(p => p.CategoryId == categoryId.Value);
+        if (categoryIds is { Count: > 0 }) q = q.Where(p => categoryIds.Contains(p.CategoryId));
         if (isActive.HasValue)
         {
             // Only include products where the product's IsActive matches and, when a category exists,
@@ -185,9 +199,15 @@ public class ProductRepository : IProductRepository
             q = q.Where(p => p.IsActive == isActive.Value && (p.Category == null || p.Category.IsActive == isActive.Value));
         }
         if (isFeatured.HasValue) q = q.Where(p => p.IsFeatured == isFeatured.Value);
+        if (minRating.HasValue)
+        {
+            var ratingThreshold = minRating.Value;
+            q = q.Where(p => p.Reviews.Any() && p.Reviews.Average(r => (double)r.Rating) >= ratingThreshold);
+        }
+        if (isStockAvailable == true) q = q.Where(p => p.StockQuantity > 0);
 
         // sorting
-        q = sort?.ToLower() switch
+        q = sort?.Replace(" ", "").ToLowerInvariant() switch
         {
             "priceasc" => q.OrderBy(p => p.Price),
             "pricedesc" => q.OrderByDescending(p => p.Price),
@@ -195,6 +215,8 @@ public class ProductRepository : IProductRepository
             "namedesc" => q.OrderByDescending(p => p.Name),
             "createdatasc" => q.OrderBy(p => p.CreatedAt),
             "createdatdesc" => q.OrderByDescending(p => p.CreatedAt),
+            "toprated" => q.OrderByDescending(p => p.Reviews.Select(r => (double?)r.Rating).Average() ?? 0),
+            "featured" => q.OrderByDescending(p => p.IsFeatured).ThenByDescending(p => p.UpdatedAt ?? p.CreatedAt),
             _ => q.OrderByDescending(p => p.CreatedAt)
         };
 
