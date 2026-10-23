@@ -1,11 +1,11 @@
-using System.IdentityModel.Tokens.Jwt;
-using Elephanta.API.Helpers;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Elephanta.Domain.Constants;
+using Elephanta.Application.Common;
 using Elephanta.Application.Features.Support.DTOs;
 using Elephanta.Application.Features.Support.Interfaces;
+using Elephanta.Domain.Constants;
 using Elephanta.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Elephanta.API.Controllers;
 
@@ -24,12 +24,10 @@ public class CustomerSupportController : ControllerBase
     [HttpPost("requests")]
     public async Task<IActionResult> Create([FromBody] CreateCustomerSupportRequest req)
     {
-        Guid? userId = ClaimsHelper.GetUserIdFromClaims(User);
-
         var entity = new CustomerSupportRequest
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            Name = req.Name,
             Subject = req.Subject,
             Message = req.Message,
             Email = req.Email,
@@ -42,7 +40,7 @@ public class CustomerSupportController : ControllerBase
         var resp = new CustomerSupportRequestResponse
         {
             Id = added.Id,
-            UserId = added.UserId,
+            Name = added.Name,
             Subject = added.Subject,
             Message = added.Message,
             Email = added.Email,
@@ -60,14 +58,14 @@ public class CustomerSupportController : ControllerBase
     [HttpGet("requests/my")]
     public async Task<IActionResult> GetMyRequests()
     {
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
-        if (!userId.HasValue) return Unauthorized();
+        var email = GetUserEmail();
+        if (string.IsNullOrWhiteSpace(email)) return Unauthorized();
 
-        var list = await _service.GetByUserAsync(userId.Value);
+        var list = await _service.GetByEmailAsync(email);
         var resp = list.Select(c => new CustomerSupportRequestResponse
         {
             Id = c.Id,
-            UserId = c.UserId,
+            Name = c.Name,
             Subject = c.Subject,
             Message = c.Message,
             Email = c.Email,
@@ -89,7 +87,7 @@ public class CustomerSupportController : ControllerBase
         var items = paged.Items.Select(c => new CustomerSupportRequestResponse
         {
             Id = c.Id,
-            UserId = c.UserId,
+            Name = c.Name,
             Subject = c.Subject,
             Message = c.Message,
             Email = c.Email,
@@ -100,7 +98,7 @@ public class CustomerSupportController : ControllerBase
             UpdatedAt = c.UpdatedAt
         }).ToList();
 
-        var result = new Elephanta.Application.Common.PagedResult<CustomerSupportRequestResponse>
+        var result = new PagedResult<CustomerSupportRequestResponse>
         {
             Items = items,
             TotalCount = paged.TotalCount,
@@ -116,20 +114,17 @@ public class CustomerSupportController : ControllerBase
     public async Task<IActionResult> GetRequest(Guid id)
     {
         var req = await _service.GetByIdAsync(id);
-        if (req == null) return NotFound();
+        if (req == null) return NotFound(new ApiResponse(false, "Customer support request not found"));
 
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
-        if (userId.HasValue)
-        {
-            // if not admin, ensure ownership
-            var isAdmin = User.IsInRole("Admin");
-            if (!isAdmin && req.UserId != userId.Value) return NotFound();
-        }
+        var isAdmin = User.IsInRole("Admin");
+        var email = GetUserEmail();
+        if (!isAdmin && (string.IsNullOrWhiteSpace(email)
+            || !string.Equals(req.Email, email, StringComparison.OrdinalIgnoreCase))) return NotFound(new ApiResponse(false, "Customer support request not found"));
 
         var resp = new CustomerSupportRequestResponse
         {
             Id = req.Id,
-            UserId = req.UserId,
+            Name = req.Name,
             Subject = req.Subject,
             Message = req.Message,
             Email = req.Email,
@@ -148,25 +143,22 @@ public class CustomerSupportController : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCustomerSupportRequest req)
     {
         var existing = await _service.GetByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "Customer support request not found"));
 
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
         var isAdmin = User.IsInRole("Admin");
+        var email = GetUserEmail();
+        if (!isAdmin && (string.IsNullOrWhiteSpace(email)
+            || !string.Equals(existing.Email, email, StringComparison.OrdinalIgnoreCase))) return NotFound(new ApiResponse(false, "Customer support request not found"));
 
-        if (userId.HasValue)
-        {
-            if (!isAdmin && existing.UserId != userId.Value) return NotFound();
-        }
-        else
-        {
-            return Unauthorized();
-        }
+        if (req.Name is null && req.Subject is null && req.Message is null && req.Email is null && req.Phone is null
+            && (!isAdmin || !req.IsResolved.HasValue)) return Ok(new ApiResponse(true, "No changes detected", id));
 
-        existing.Subject = req.Subject;
-        existing.Message = req.Message;
-        existing.Email = req.Email;
-        existing.Phone = req.Phone;
-        if (isAdmin && req.IsResolved.HasValue)
+        if (req.Name is not null) existing.Name = req.Name;
+        if (req.Subject is not null) existing.Subject = req.Subject;
+        if (req.Message is not null) existing.Message = req.Message;
+        if (req.Email is not null) existing.Email = req.Email;
+        if (req.Phone is not null) existing.Phone = req.Phone;
+        if (isAdmin && req.IsResolved.HasValue && existing.IsResolved != req.IsResolved.Value)
         {
             existing.IsResolved = req.IsResolved.Value;
             existing.ResolvedAt = req.IsResolved.Value ? DateTime.UtcNow : null;
@@ -174,7 +166,7 @@ public class CustomerSupportController : ControllerBase
 
         existing.UpdatedAt = DateTime.UtcNow;
         await _service.UpdateAsync(existing);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Customer support request updated successfully", id));
     }
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
@@ -182,9 +174,12 @@ public class CustomerSupportController : ControllerBase
     public async Task<IActionResult> Delete(Guid id)
     {
         var existing = await _service.GetByIdAsync(id);
-        if (existing == null) return NotFound();
+        if (existing == null) return NotFound(new ApiResponse(false, "Customer support request not found"));
 
         await _service.DeleteAsync(id);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Customer support request deleted successfully", id));
     }
+
+    private string? GetUserEmail() =>
+        User.FindFirst("email")?.Value ?? User.FindFirst(ClaimTypes.Email)?.Value;
 }

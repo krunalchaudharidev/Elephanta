@@ -5,8 +5,7 @@ namespace Elephanta.Domain.Entities;
 
 public class CustomerSupportRequest : BaseEntity
 {
-    // Optional user association (guest or registered user)
-    public Guid? UserId { get; set; }
+    public string Name { get; set; } = null!;
 
     public string Subject { get; set; } = null!;
 
@@ -19,7 +18,4 @@ public class CustomerSupportRequest : BaseEntity
     public bool IsResolved { get; set; } = false;
 
     public DateTime? ResolvedAt { get; set; }
-
-    // Navigation
-    public User? User { get; set; }
 }

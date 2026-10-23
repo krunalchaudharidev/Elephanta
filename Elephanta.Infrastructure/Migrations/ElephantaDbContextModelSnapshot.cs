@@ -121,6 +121,11 @@ namespace Elephanta.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -135,12 +140,7 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("CustomerSupportRequests", (string)null);
                 });
@@ -1075,16 +1075,6 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Navigation("Media");
 
                     b.Navigation("ParentCategory");
-                });
-
-            modelBuilder.Entity("Elephanta.Domain.Entities.CustomerSupportRequest", b =>
-                {
-                    b.HasOne("Elephanta.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Elephanta.Domain.Entities.OfferImage", b =>

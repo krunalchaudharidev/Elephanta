@@ -25,12 +25,16 @@ public class CustomerSupportService : ICustomerSupportService
     {
         var existing = await _db.CustomerSupportRequests.FindAsync(req.Id);
         if (existing == null) throw new InvalidOperationException("Support request not found");
-        existing.Subject = req.Subject;
-        existing.Message = req.Message;
-        existing.Email = req.Email;
-        existing.Phone = req.Phone;
-        existing.IsResolved = req.IsResolved;
-        existing.ResolvedAt = req.IsResolved ? DateTime.UtcNow : null;
+        if (req.Name is not null) existing.Name = req.Name;
+        if (req.Subject is not null) existing.Subject = req.Subject;
+        if (req.Message is not null) existing.Message = req.Message;
+        if (req.Email is not null) existing.Email = req.Email;
+        if (req.Phone is not null) existing.Phone = req.Phone;
+        if (existing.IsResolved != req.IsResolved)
+        {
+            existing.IsResolved = req.IsResolved;
+            existing.ResolvedAt = req.IsResolved ? DateTime.UtcNow : null;
+        }
         existing.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
@@ -45,12 +49,15 @@ public class CustomerSupportService : ICustomerSupportService
 
     public async Task<CustomerSupportRequest?> GetByIdAsync(Guid id)
     {
-        return await _db.CustomerSupportRequests.Include(c => c.User).FirstOrDefaultAsync(c => c.Id == id);
+        return await _db.CustomerSupportRequests.FirstOrDefaultAsync(c => c.Id == id);
     }
 
-    public async Task<List<CustomerSupportRequest>> GetByUserAsync(Guid userId)
+    public async Task<List<CustomerSupportRequest>> GetByEmailAsync(string email)
     {
-        return await _db.CustomerSupportRequests.Where(c => c.UserId == userId).ToListAsync();
+        var normalizedEmail = email.ToLower();
+        return await _db.CustomerSupportRequests
+            .Where(c => c.Email != null && c.Email.ToLower() == normalizedEmail)
+            .ToListAsync();
     }
 
     public async Task<Elephanta.Application.Common.PagedResult<CustomerSupportRequest>> GetAllAsync(int pageNumber, int pageSize)

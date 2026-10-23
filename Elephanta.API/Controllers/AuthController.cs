@@ -24,6 +24,9 @@ public class AuthController : ControllerBase
     {
         try
         {
+            // Set the role to "User" for all new registrations
+            req.Role = "User";
+
             var resp = await _authService.RegisterAsync(req);
             return Ok(resp);
         }

@@ -12,6 +12,10 @@ public class CustomerSupportRequestConfiguration : IEntityTypeConfiguration<Cust
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
         builder.Property(x => x.Subject)
             .IsRequired()
             .HasColumnType("text");
@@ -27,10 +31,5 @@ public class CustomerSupportRequestConfiguration : IEntityTypeConfiguration<Cust
             .HasMaxLength(50);
 
         builder.Property(x => x.IsResolved).HasDefaultValue(false);
-
-        builder.HasOne(x => x.User)
-            .WithMany()
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.SetNull);
     }
 }
