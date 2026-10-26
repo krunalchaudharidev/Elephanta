@@ -22,6 +22,7 @@ public interface IProductService
     Task UpdateProductAsync(Product product);
     Task<Product?> GetProductByIdAsync(Guid id);
     Task<PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize);
+    Task<List<ProductRecommendationResponse>> GetYouMayAlsoLikeAsync(Guid productId, Guid categoryId, decimal price, int count);
 
     // Images
     Task<ProductImage> AddImageAsync(ProductImage img);

@@ -112,6 +112,128 @@ public class ProductRepository : IProductRepository
         return new PagedResult<Product> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
     }
 
+    public async Task<List<ProductRecommendationResponse>> GetYouMayAlsoLikeAsync(Guid productId, Guid categoryId, decimal price, int count)
+    {
+        if (count <= 0) return new List<ProductRecommendationResponse>();
+
+        var minPrice = price * 0.9m;
+        var maxPrice = price * 1.1m;
+        var products = new List<Product>();
+        var selectedIds = new HashSet<Guid>();
+
+        IQueryable<Product> ActiveProducts() => _db.Products
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .Where(p => p.Id != productId && !p.IsDeleted && p.IsActive && p.Category.IsActive);
+
+        var sameCategoryProducts = await ActiveProducts()
+            .Where(p => p.CategoryId == categoryId)
+            .OrderBy(p => Math.Abs(p.Price - price))
+            .ThenByDescending(p => p.CreatedAt)
+            .Take(count)
+            .AsSplitQuery()
+            .ToListAsync();
+
+        products.AddRange(sameCategoryProducts);
+        selectedIds.UnionWith(sameCategoryProducts.Select(p => p.Id));
+
+        var remainingCount = count - products.Count;
+        if (remainingCount > 0)
+        {
+            var otherCategoryProducts = await ActiveProducts()
+                .Where(p => p.CategoryId != categoryId && p.Price >= minPrice && p.Price <= maxPrice)
+                .OrderBy(p => Math.Abs(p.Price - price))
+                .ThenByDescending(p => p.CreatedAt)
+                .Take(remainingCount)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            products.AddRange(otherCategoryProducts);
+            selectedIds.UnionWith(otherCategoryProducts.Select(p => p.Id));
+        }
+
+        remainingCount = count - products.Count;
+        if (remainingCount > 0)
+        {
+            var randomProducts = await ActiveProducts()
+                .Where(p => !selectedIds.Contains(p.Id))
+                .OrderBy(_ => EF.Functions.Random())
+                .Take(remainingCount)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            products.AddRange(randomProducts);
+            selectedIds.UnionWith(randomProducts.Select(p => p.Id));
+        }
+
+        var imageRows = await _db.ProductImages
+            .AsNoTracking()
+            .Where(image => selectedIds.Contains(image.ProductId) && image.MediaId.HasValue)
+            .OrderBy(image => image.DisplayOrder)
+            .ToListAsync();
+        var imagesByProductId = imageRows
+            .GroupBy(image => image.ProductId)
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        var reviewRows = await _db.ProductReviews
+            .AsNoTracking()
+            .Where(review => selectedIds.Contains(review.ProductId))
+            .Select(review => new
+            {
+                review.Id,
+                review.ProductId,
+                review.Rating,
+                review.Comment,
+                review.UserId,
+            })
+            .ToListAsync();
+
+        var selectedReviewIds = reviewRows.Select(review => review.Id).ToHashSet();
+
+        var reviewsByProductId = reviewRows
+            .GroupBy(review => review.ProductId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(review => new ProductReviewResponse
+                {
+                    Id = review.Id,
+                    Rating = review.Rating,
+                    Comment = review.Comment,
+                    UserId = review.UserId,
+                }).ToList());
+
+        return products.Select(product =>
+        {
+            var productImages = imagesByProductId.GetValueOrDefault(product.Id) ?? new List<ProductImage>();
+            var productReviews = reviewsByProductId.GetValueOrDefault(product.Id) ?? new List<ProductReviewResponse>();
+
+            return new ProductRecommendationResponse
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Slug = product.Slug,
+                SKU = product.SKU,
+                ShortDescription = product.ShortDescription,
+                Description = product.Description,
+                Price = product.Price,
+                CompareAtPrice = product.CompareAtPrice,
+                StockQuantity = product.StockQuantity,
+                ReservedQuantity = product.ReservedQuantity,
+                SoldQuantity = product.SoldQuantity,
+                IsActive = product.IsActive,
+                IsFeatured = product.IsFeatured,
+                CategoryId = product.CategoryId,
+                ImageIds = productImages.Select(image => image.MediaId!.Value).ToList(),
+                ReviewCount = productReviews.Count,
+                AverageRating = productReviews.Count > 0 ? (decimal)productReviews.Average(review => review.Rating) : 0,
+                CategoryName = product.Category?.Name,
+                PrimaryImageId = productImages.FirstOrDefault(image => image.IsPrimary)?.MediaId ?? productImages.FirstOrDefault()?.MediaId,
+                IsCategoryActive = product.Category?.IsActive ?? false,
+                Reviews = productReviews
+            };
+        }).ToList();
+    }
+
     // Images
     public async Task<ProductImage> AddImageAsync(ProductImage img)
     {

@@ -515,6 +515,16 @@ public class ProductController : ControllerBase
         return Ok(resp);
     }
 
+    [HttpGet("products/{productId}/you-may-also-like")]
+    public async Task<IActionResult> GetYouMayAlsoLike(Guid productId)
+    {
+        var product = await _service.GetProductByIdAsync(productId);
+        if (product == null || product.IsDeleted) return NotFound(new ApiResponse(false, "Product not found"));
+
+        var related = await _service.GetYouMayAlsoLikeAsync(productId, product.CategoryId, product.Price, 5);
+        return Ok(related);
+    }
+
     // Images
     /// <summary>
     /// Requires Admin role.

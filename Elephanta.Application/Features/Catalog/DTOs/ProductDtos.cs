@@ -122,3 +122,8 @@ public class ProductResponse
 
     public bool? IsCategoryActive { get; set; }
 }
+
+public class ProductRecommendationResponse : ProductResponse
+{
+    public List<ProductReviewResponse> Reviews { get; set; } = new();
+}

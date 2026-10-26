@@ -24,6 +24,7 @@ public class ProductService : IProductService
     public Task UpdateProductAsync(Product product) => _repo.UpdateProductAsync(product);
     public Task<Product?> GetProductByIdAsync(Guid id) => _repo.GetProductByIdAsync(id);
     public Task<PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize) => _repo.GetProductsAsync(pageNumber, pageSize);
+    public Task<List<ProductRecommendationResponse>> GetYouMayAlsoLikeAsync(Guid productId, Guid categoryId, decimal price, int count) => _repo.GetYouMayAlsoLikeAsync(productId, categoryId, price, count);
 
     public Task<ProductImage> AddImageAsync(ProductImage img) => _repo.AddImageAsync(img);
     public Task UpdateImageAsync(ProductImage img) => _repo.UpdateImageAsync(img);

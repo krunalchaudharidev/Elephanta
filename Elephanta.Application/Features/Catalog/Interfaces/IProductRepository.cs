@@ -21,6 +21,7 @@ public interface IProductRepository
     Task UpdateProductAsync(Product product);
     Task<Product?> GetProductByIdAsync(Guid id);
     Task<PagedResult<Product>> GetProductsAsync(int pageNumber, int pageSize);
+    Task<List<ProductRecommendationResponse>> GetYouMayAlsoLikeAsync(Guid productId, Guid categoryId, decimal price, int count);
 
     // Category relationships / deletion helpers
     Task<bool> CategoryHasChildrenAsync(Guid categoryId);
