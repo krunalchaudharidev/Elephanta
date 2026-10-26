@@ -36,6 +36,7 @@ public class ElephantaDbContext : DbContext
     public DbSet<Media> Medias { get; set; } = null!;
 
     public DbSet<ProductReview> ProductReviews { get; set; } = null!;
+    public DbSet<ProductReviewImage> ProductReviewImages { get; set; } = null!;
     public DbSet<ProductFaq> ProductFaqs { get; set; } = null!;
     public DbSet<CustomerSupportRequest> CustomerSupportRequests { get; set; } = null!;
 
@@ -72,6 +73,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ProductImageConfiguration());
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
         modelBuilder.ApplyConfiguration(new ProductReviewConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductReviewImageConfiguration());
         modelBuilder.ApplyConfiguration(new UserAddressConfiguration());
         modelBuilder.ApplyConfiguration(new CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new MediaConfiguration());
@@ -95,6 +97,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.Entity<ProductImage>();
         modelBuilder.Entity<Product>();
         modelBuilder.Entity<ProductReview>();
+        modelBuilder.Entity<ProductReviewImage>();
         modelBuilder.Entity<UserAddress>();
         modelBuilder.Entity<Category>();
         modelBuilder.Entity<Media>();

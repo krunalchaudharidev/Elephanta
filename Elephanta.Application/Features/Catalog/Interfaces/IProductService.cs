@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Elephanta.Application.Common;
 using Elephanta.Domain.Entities;
+using Elephanta.Application.Features.Catalog.DTOs;
 using System.Collections.Generic;
 
 namespace Elephanta.Application.Features.Catalog.Interfaces;
@@ -32,9 +33,9 @@ public interface IProductService
 
     // Reviews
     Task<ProductReview> AddReviewAsync(ProductReview review);
-    Task UpdateReviewAsync(ProductReview review);
+    Task UpdateReviewAsync(ProductReview review, List<Guid>? imageIds);
     Task<ProductReview?> GetReviewByIdAsync(Guid id);
-    Task<List<ProductReview>> GetReviewsByProductAsync(Guid productId);
+    Task<PagedResult<ProductReviewResponse>> GetReviewsByProductAsync(Guid productId, int pageNumber, int pageSize);
 
     // Search
     Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, List<Guid>? categoryIds, string? sort, bool? isActive, bool? isFeatured, int? minRating, bool? isStockAvailable, int pageNumber, int pageSize);

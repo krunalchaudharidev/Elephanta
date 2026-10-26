@@ -8,6 +8,8 @@ using Elephanta.Application.Features.ProductFaqs.DTOs;
 using Elephanta.Application.Features.ProductFaqs.Interfaces;
 using Elephanta.Application.Common;
 using Elephanta.Application.Features.Media.Interfaces;
+using Elephanta.Application.Features.Authentication.Interfaces;
+using Elephanta.API.Helpers;
 
 namespace Elephanta.API.Controllers;
 
@@ -18,12 +20,14 @@ public class ProductController : ControllerBase
     private readonly IProductService _service;
     private readonly IProductFaqService _faqService;
     private readonly IMediaService _mediaService;
+    private readonly IUserService _userService;
 
-    public ProductController(IProductService service, IProductFaqService faqService, IMediaService mediaService)
+    public ProductController(IProductService service, IProductFaqService faqService, IMediaService mediaService, IUserService userService)
     {
         _service = service;
         _faqService = faqService;
         _mediaService = mediaService;
+        _userService = userService;
     }
 
     // Categories
@@ -579,9 +583,39 @@ public class ProductController : ControllerBase
     [HttpPost("products/{productId}/reviews")]
     public async Task<IActionResult> AddReview(Guid productId, [FromBody] ProductReviewRequest req)
     {
-        var r = new ProductReview { Id = Guid.NewGuid(), ProductId = productId, Rating = req.Rating, Comment = req.Comment, CreatedAt = DateTime.UtcNow };
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized();
+
+        var reviewId = Guid.NewGuid();
+        var r = new ProductReview
+        {
+            Id = reviewId,
+            ProductId = productId,
+            UserId = userId.Value,
+            Rating = req.Rating,
+            Comment = req.Comment,
+            CreatedAt = DateTime.UtcNow,
+            Images = req.ImageIds?.Distinct().Select((mediaId, index) => new ProductReviewImage
+            {
+                Id = Guid.NewGuid(),
+                ProductReviewId = reviewId,
+                MediaId = mediaId,
+                DisplayOrder = index,
+                CreatedAt = DateTime.UtcNow
+            }).ToList() ?? new List<ProductReviewImage>()
+        };
+
         var added = await _service.AddReviewAsync(r);
-        var resp = new ProductReviewResponse { Id = added.Id, Rating = added.Rating, Comment = added.Comment, UserId = added.UserId };
+        var reviewUser = await _userService.GetByIdAsync(userId.Value);
+        var resp = new ProductReviewResponse
+        {
+            Id = added.Id,
+            Rating = added.Rating,
+            Comment = added.Comment,
+            UserId = added.UserId,
+            UserFirstName = reviewUser?.FirstName,
+            UserLastName = reviewUser?.LastName
+        };
         return CreatedAtAction(nameof(GetReview), new { id = resp.Id }, resp);
     }
 
@@ -598,16 +632,16 @@ public class ProductController : ControllerBase
         existing.Rating = req.Rating;
         existing.Comment = req.Comment;
         existing.UpdatedAt = DateTime.UtcNow;
-        await _service.UpdateReviewAsync(existing);
+
+        await _service.UpdateReviewAsync(existing, req.ImageIds);
         return Ok(new ApiResponse(true, "Review updated successfully", existing.Id));
     }
 
     [HttpGet("products/{productId}/reviews")]
-    public async Task<IActionResult> GetReviews(Guid productId)
+    public async Task<IActionResult> GetReviews(Guid productId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var list = await _service.GetReviewsByProductAsync(productId);
-        var resp = list.Select(r => new ProductReviewResponse { Id = r.Id, Rating = r.Rating, Comment = r.Comment, UserId = r.UserId }).ToList();
-        return Ok(resp);
+        var paged = await _service.GetReviewsByProductAsync(productId, pageNumber, pageSize);
+        return Ok(paged);
     }
 
     [HttpGet("products/reviews/{id}")]
@@ -615,7 +649,21 @@ public class ProductController : ControllerBase
     {
         var r = await _service.GetReviewByIdAsync(id);
         if (r == null) return NotFound();
-        var resp = new ProductReviewResponse { Id = r.Id, Rating = r.Rating, Comment = r.Comment, UserId = r.UserId };
+        var reviewUser = r.UserId.HasValue ? await _userService.GetByIdAsync(r.UserId.Value) : null;
+        var resp = new ProductReviewResponse
+        {
+            Id = r.Id,
+            Rating = r.Rating,
+            Comment = r.Comment,
+            UserId = r.UserId,
+            UserFirstName = reviewUser?.FirstName,
+            UserLastName = reviewUser?.LastName,
+            ImageIds = r.Images
+                .Where(image => image.MediaId.HasValue)
+                .OrderBy(image => image.DisplayOrder)
+                .Select(image => image.MediaId!.Value)
+                .ToList()
+        };
         return Ok(resp);
     }
 

@@ -1,5 +1,6 @@
 using Elephanta.Application.Common;
 using Elephanta.Application.Features.Catalog.Interfaces;
+using Elephanta.Application.Features.Catalog.DTOs;
 using Elephanta.Domain.Entities;
 
 namespace Elephanta.Infrastructure.Services;
@@ -33,9 +34,9 @@ public class ProductService : IProductService
     public Task<ProductImage?> GetImageByMediaIdAsync(Guid mediaId) => _repo.GetImageByMediaIdAsync(mediaId);
 
     public Task<ProductReview> AddReviewAsync(ProductReview review) => _repo.AddReviewAsync(review);
-    public Task UpdateReviewAsync(ProductReview review) => _repo.UpdateReviewAsync(review);
+    public Task UpdateReviewAsync(ProductReview review, List<Guid>? imageIds) => _repo.UpdateReviewAsync(review, imageIds);
     public Task<ProductReview?> GetReviewByIdAsync(Guid id) => _repo.GetReviewByIdAsync(id);
-    public Task<List<ProductReview>> GetReviewsByProductAsync(Guid productId) => _repo.GetReviewsByProductAsync(productId);
+    public Task<PagedResult<ProductReviewResponse>> GetReviewsByProductAsync(Guid productId, int pageNumber, int pageSize) => _repo.GetReviewsByProductAsync(productId, pageNumber, pageSize);
 
     public Task<PagedResult<Product>> SearchProductsAsync(string? name, decimal? minPrice, decimal? maxPrice, List<Guid>? categoryIds, string? sort, bool? isActive, bool? isFeatured, int? minRating, bool? isStockAvailable, int pageNumber, int pageSize)
         => _repo.SearchProductsAsync(name, minPrice, maxPrice, categoryIds, sort, isActive, isFeatured, minRating, isStockAvailable, pageNumber, pageSize);

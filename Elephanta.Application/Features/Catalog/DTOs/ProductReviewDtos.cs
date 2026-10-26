@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Elephanta.Application.Features.Catalog.DTOs;
@@ -9,6 +10,8 @@ public class ProductReviewRequest
     public int Rating { get; set; }
 
     public string? Comment { get; set; }
+
+    public List<Guid>? ImageIds { get; set; }
 }
 
 public class ProductReviewResponse
@@ -20,4 +23,10 @@ public class ProductReviewResponse
     public string? Comment { get; set; }
 
     public Guid? UserId { get; set; }
+
+    public string? UserFirstName { get; set; }
+
+    public string? UserLastName { get; set; }
+
+    public List<Guid> ImageIds { get; set; } = new();
 }

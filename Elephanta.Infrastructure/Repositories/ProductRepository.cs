@@ -1,6 +1,7 @@
 using Elephanta.Application.Common;
 using System.IO;
 using Elephanta.Application.Features.Catalog.Interfaces;
+using Elephanta.Application.Features.Catalog.DTOs;
 using Elephanta.Domain.Entities;
 using Elephanta.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +42,7 @@ public class ProductRepository : IProductRepository
             .Include(c => c.ParentCategory)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(name)) q = q.Where(c => c.Name.Contains(name));
+        if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => EF.Functions.ILike(p.Name, $"%{name}%"));
         if (isActive.HasValue) q = q.Where(c => c.IsActive == isActive.Value);
 
         // sorting
@@ -161,20 +162,96 @@ public class ProductRepository : IProductRepository
         return review;
     }
 
-    public async Task UpdateReviewAsync(ProductReview review)
+    public async Task UpdateReviewAsync(ProductReview review, List<Guid>? imageIds)
     {
-        _db.ProductReviews.Update(review);
+        if (imageIds != null)
+        {
+            var desiredImageIds = imageIds.Distinct().ToList();
+            var displayOrders = desiredImageIds
+                .Select((mediaId, index) => new { mediaId, index })
+                .ToDictionary(x => x.mediaId, x => x.index);
+            var retainedMediaIds = new HashSet<Guid>();
+            var currentImages = await _db.ProductReviewImages
+                .Where(image => image.ProductReviewId == review.Id)
+                .ToListAsync();
+
+            foreach (var image in currentImages)
+            {
+                if (!image.MediaId.HasValue ||
+                    !displayOrders.TryGetValue(image.MediaId.Value, out var displayOrder) ||
+                    !retainedMediaIds.Add(image.MediaId.Value))
+                {
+                    _db.ProductReviewImages.Remove(image);
+                    continue;
+                }
+
+                image.DisplayOrder = displayOrder;
+            }
+
+            foreach (var (mediaId, displayOrder) in displayOrders)
+            {
+                if (retainedMediaIds.Contains(mediaId)) continue;
+
+                _db.ProductReviewImages.Add(new ProductReviewImage
+                {
+                    Id = Guid.NewGuid(),
+                    ProductReviewId = review.Id,
+                    MediaId = mediaId,
+                    DisplayOrder = displayOrder,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
         await _db.SaveChangesAsync();
     }
 
     public async Task<ProductReview?> GetReviewByIdAsync(Guid id)
     {
-        return await _db.ProductReviews.FirstOrDefaultAsync(r => r.Id == id);
+        return await _db.ProductReviews
+            .Include(r => r.Images)
+            .FirstOrDefaultAsync(r => r.Id == id);
     }
 
-    public async Task<List<ProductReview>> GetReviewsByProductAsync(Guid productId)
+    public async Task<PagedResult<ProductReviewResponse>> GetReviewsByProductAsync(Guid productId, int pageNumber, int pageSize)
     {
-        return await _db.ProductReviews.Where(r => r.ProductId == productId).ToListAsync();
+        var query = _db.ProductReviews.Where(r => r.ProductId == productId);
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .ThenByDescending(r => r.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new ProductReviewResponse
+            {
+                Id = r.Id,
+                Rating = r.Rating,
+                Comment = r.Comment,
+                UserId = r.UserId,
+                UserFirstName = _db.Users
+                    .Where(u => (Guid?)u.Id == r.UserId)
+                    .Select(u => u.FirstName)
+                    .FirstOrDefault(),
+                UserLastName = _db.Users
+                    .Where(u => (Guid?)u.Id == r.UserId)
+                    .Select(u => u.LastName)
+                    .FirstOrDefault(),
+                ImageIds = r.Images
+                    .Where(image => image.MediaId.HasValue)
+                    .OrderBy(image => image.DisplayOrder)
+                    .Select(image => image.MediaId!.Value)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return new PagedResult<ProductReviewResponse>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     // Search
@@ -188,7 +265,7 @@ public class ProductRepository : IProductRepository
             .Where(p => !p.IsDeleted)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => p.Name.Contains(name));
+        if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => EF.Functions.ILike(p.Name, $"%{name}%"));
         if (minPrice.HasValue) q = q.Where(p => p.Price >= minPrice.Value);
         if (maxPrice.HasValue) q = q.Where(p => p.Price <= maxPrice.Value);
         if (categoryIds is { Count: > 0 }) q = q.Where(p => categoryIds.Contains(p.CategoryId));

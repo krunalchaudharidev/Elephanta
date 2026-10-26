@@ -764,6 +764,36 @@ namespace Elephanta.Infrastructure.Migrations
                     b.ToTable("ProductReviews", (string)null);
                 });
 
+            modelBuilder.Entity("Elephanta.Domain.Entities.ProductReviewImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("MediaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductReviewId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MediaId");
+
+                    b.HasIndex("ProductReviewId");
+
+                    b.ToTable("ProductReviewImages", (string)null);
+                });
+
             modelBuilder.Entity("Elephanta.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1231,6 +1261,24 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("Elephanta.Domain.Entities.ProductReviewImage", b =>
+                {
+                    b.HasOne("Elephanta.Domain.Entities.Media", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Elephanta.Domain.Entities.ProductReview", "ProductReview")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+
+                    b.Navigation("ProductReview");
+                });
+
             modelBuilder.Entity("Elephanta.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("Elephanta.Domain.Entities.User", "User")
@@ -1317,6 +1365,11 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Navigation("Images");
 
                     b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("Elephanta.Domain.Entities.ProductReview", b =>
+                {
+                    b.Navigation("Images");
                 });
 
             modelBuilder.Entity("Elephanta.Domain.Entities.Role", b =>

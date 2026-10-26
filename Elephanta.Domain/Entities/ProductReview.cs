@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Elephanta.Domain.Common;
 
 namespace Elephanta.Domain.Entities;
@@ -14,4 +15,6 @@ public class ProductReview : BaseEntity
     public string? Comment { get; set; }
 
     public Guid? UserId { get; set; }
+
+    public ICollection<ProductReviewImage> Images { get; set; } = new List<ProductReviewImage>();
 }
