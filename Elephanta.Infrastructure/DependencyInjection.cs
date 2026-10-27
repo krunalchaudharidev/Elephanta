@@ -10,6 +10,7 @@ using Elephanta.Application.Features.Cart.Interfaces;
 using Elephanta.Infrastructure.Services;
 using Elephanta.Application.Features.Media.Interfaces;
 using Elephanta.Application.Features.WebsiteSettings.Interfaces;
+using Elephanta.Application.Features.Wishlist.Interfaces;
 
 namespace Elephanta.Infrastructure;
 
@@ -32,6 +33,8 @@ public static class DependencyInjection
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IOfferService, OfferService>();
         services.AddScoped<ICartService, CartService>();
+        services.AddScoped<IWishlistRepository, WishlistRepository>();
+        services.AddScoped<IWishlistService, WishlistService>();
         services.AddScoped<IProductFaqService, ProductFaqService>();
         services.AddScoped<ICustomerSupportService, CustomerSupportService>();
         services.AddScoped<IWebsiteSettingRepository, WebsiteSettingRepository>();

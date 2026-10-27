@@ -44,6 +44,7 @@ public class ElephantaDbContext : DbContext
     public DbSet<OfferImage> OfferImages { get; set; } = null!;
     public DbSet<OfferUsage> OfferUsages { get; set; } = null!;
     public DbSet<CartItem> CartItems { get; set; } = null!;
+    public DbSet<Wishlist> Wishlists { get; set; } = null!;
     public DbSet<Order> Orders { get; set; } = null!;
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
     public DbSet<OrderAddress> OrderAddresses { get; set; } = null!;
@@ -61,6 +62,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
         modelBuilder.ApplyConfiguration(new CartItemConfiguration());
+        modelBuilder.ApplyConfiguration(new WishlistConfiguration());
         modelBuilder.ApplyConfiguration(new OfferConfiguration());
         modelBuilder.ApplyConfiguration(new OfferImageConfiguration());
         modelBuilder.ApplyConfiguration(new OfferUsageConfiguration());
@@ -85,6 +87,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.Entity<UserRole>();
         modelBuilder.Entity<RefreshToken>();
         modelBuilder.Entity<CartItem>();
+        modelBuilder.Entity<Wishlist>();
         modelBuilder.Entity<Offer>();
         modelBuilder.Entity<OfferImage>();
         modelBuilder.Entity<OfferUsage>();
