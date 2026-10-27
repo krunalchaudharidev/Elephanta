@@ -71,6 +71,8 @@ public class UserController : ControllerBase
         if (req.MiddleName != null) user.MiddleName = req.MiddleName;
         if (req.LastName != null) user.LastName = req.LastName;
         if (req.PhoneNumber != null) user.PhoneNumber = req.PhoneNumber;
+        if (req.Gender != null) user.Gender = req.Gender;
+        if (req.DateOfBirth.HasValue) user.DateOfBirth = req.DateOfBirth.Value;
 
         user.UpdatedAt = DateTime.UtcNow;
 
@@ -163,6 +165,8 @@ public class UserController : ControllerBase
             FirstName = firstName,
             MiddleName = middleName,
             LastName = lastName,
+            Gender = user.Gender,
+            DateOfBirth = user.DateOfBirth,
             PhoneNumber = user.PhoneNumber,
             Email = user.Email,
             Roles = roles
@@ -268,5 +272,21 @@ public class UserController : ControllerBase
         await _addressService.UpdateAddressAsync(userId.Value, id, req);
 
         return Ok(new ApiResponse(true, "Address updated successfully"));
+    }
+
+    /// <summary>
+    /// Delete an address belonging to the authenticated user.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
+    [HttpDelete("addresses/{id}")]
+    public async Task<IActionResult> DeleteAddress(Guid id)
+    {
+        var userId = ClaimsHelper.GetUserIdFromClaims(User);
+        if (!userId.HasValue) return Unauthorized(new ApiResponse(false, "Unauthorized"));
+
+        var deleted = await _addressService.DeleteAddressAsync(userId.Value, id);
+        if (!deleted) return NotFound(new ApiResponse(false, "Address not found"));
+
+        return Ok(new ApiResponse(true, "Address deleted successfully"));
     }
 }

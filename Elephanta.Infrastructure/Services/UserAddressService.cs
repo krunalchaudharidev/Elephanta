@@ -80,4 +80,9 @@ public class UserAddressService : IUserAddressService
 
         await _repo.UpdateAsync(a);
     }
+
+    public Task<bool> DeleteAddressAsync(Guid userId, Guid id)
+    {
+        return _repo.DeleteAsync(userId, id);
+    }
 }

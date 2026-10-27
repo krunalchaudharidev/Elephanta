@@ -1,3 +1,5 @@
+using System;
+
 namespace Elephanta.Application.Features.Authentication.DTOs;
 
 public class UpdateUserRequest
@@ -9,4 +11,8 @@ public class UpdateUserRequest
     public string? LastName { get; set; }
 
     public string? PhoneNumber { get; set; }
+
+    public string? Gender { get; set; }
+
+    public DateOnly? DateOfBirth { get; set; }
 }

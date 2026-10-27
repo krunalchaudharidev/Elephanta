@@ -35,4 +35,15 @@ public class UserAddressRepository : IUserAddressRepository
         _db.UserAddresses.Update(address);
         await _db.SaveChangesAsync();
     }
+
+    public async Task<bool> DeleteAsync(Guid userId, Guid id)
+    {
+        var address = await _db.UserAddresses
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+        if (address == null) return false;
+
+        _db.UserAddresses.Remove(address);
+        await _db.SaveChangesAsync();
+        return true;
+    }
 }

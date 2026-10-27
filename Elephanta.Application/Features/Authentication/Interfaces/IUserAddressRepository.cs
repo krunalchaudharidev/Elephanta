@@ -14,4 +14,6 @@ public interface IUserAddressRepository
     Task<List<UserAddress>> GetByUserAsync(Guid userId);
 
     Task UpdateAsync(UserAddress address);
+
+    Task<bool> DeleteAsync(Guid userId, Guid id);
 }

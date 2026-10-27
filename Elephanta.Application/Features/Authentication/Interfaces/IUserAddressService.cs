@@ -15,4 +15,6 @@ public interface IUserAddressService
     Task<UserAddress?> GetByIdAsync(Guid id);
 
     Task UpdateAddressAsync(Guid userId, Guid id, UpdateUserAddressRequest req);
+
+    Task<bool> DeleteAddressAsync(Guid userId, Guid id);
 }
