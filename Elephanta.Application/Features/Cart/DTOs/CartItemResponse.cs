@@ -9,4 +9,5 @@ public class CartItemResponse
     public string ProductName { get; set; } = null!;
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public Guid? PrimaryImageId { get; set; }
 }

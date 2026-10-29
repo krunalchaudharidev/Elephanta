@@ -1,76 +1,29 @@
+using Elephanta.Application.Common;
 using Elephanta.Application.Features.Cart.Interfaces;
 using Elephanta.Domain.Entities;
-using Elephanta.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elephanta.Infrastructure.Services;
 
 public class CartService : ICartService
 {
-    private readonly ElephantaDbContext _db;
+    private readonly ICartRepository _repository;
 
-    public CartService(ElephantaDbContext db)
+    public CartService(ICartRepository repository)
     {
-        _db = db;
+        _repository = repository;
     }
 
-    public async Task<CartItem> AddItemAsync(CartItem item)
-    {
-        var existing = await _db.CartItems.FirstOrDefaultAsync(c => c.UserId == item.UserId && c.ProductId == item.ProductId);
-        if (existing != null)
-        {
-            existing.Quantity += item.Quantity;
-            existing.UnitPrice = item.UnitPrice;
-            existing.UpdatedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
-            return existing;
-        }
+    public Task<CartItem> AddItemAsync(CartItem item) => _repository.AddItemAsync(item);
 
-        _db.CartItems.Add(item);
-        await _db.SaveChangesAsync();
-        return item;
-    }
+    public Task UpdateItemAsync(CartItem item) => _repository.UpdateItemAsync(item);
 
-    public async Task UpdateItemAsync(CartItem item)
-    {
-        var existing = await _db.CartItems.FindAsync(item.Id);
-        if (existing == null) throw new InvalidOperationException("Cart item not found");
-        existing.Quantity = item.Quantity;
-        existing.UnitPrice = item.UnitPrice;
-        existing.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-    }
+    public Task DeleteItemAsync(Guid id) => _repository.DeleteItemAsync(id);
 
-    public async Task DeleteItemAsync(Guid id)
-    {
-        var existing = await _db.CartItems.FindAsync(id);
-        if (existing == null) return;
-        _db.CartItems.Remove(existing);
-        await _db.SaveChangesAsync();
-    }
+    public Task<CartItem?> GetItemByIdAsync(Guid id) => _repository.GetItemByIdAsync(id);
 
-    public async Task<CartItem?> GetItemByIdAsync(Guid id)
-    {
-        return await _db.CartItems.Include(c => c.Product).FirstOrDefaultAsync(c => c.Id == id);
-    }
+    public Task<List<CartItem>> GetItemsAsync(Guid? userId, string? sessionId)
+        => _repository.GetItemsAsync(userId, sessionId);
 
-    public async Task<List<CartItem>> GetItemsByUserAsync(Guid userId)
-    {
-        return await _db.CartItems.Where(c => c.UserId == userId).Include(c => c.Product).ToListAsync();
-    }
-
-    public async Task<Elephanta.Application.Common.PagedResult<CartItem>> GetItemsByUserAsync(Guid userId, int pageNumber, int pageSize)
-    {
-        var query = _db.CartItems.Where(c => c.UserId == userId).Include(c => c.Product).AsQueryable();
-        var total = await query.CountAsync();
-        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-
-        return new Elephanta.Application.Common.PagedResult<CartItem>
-        {
-            Items = items,
-            TotalCount = total,
-            PageNumber = pageNumber,
-            PageSize = pageSize
-        };
-    }
+    public Task<PagedResult<CartItem>> GetItemsAsync(Guid? userId, string? sessionId, int pageNumber, int pageSize)
+        => _repository.GetItemsAsync(userId, sessionId, pageNumber, pageSize);
 }

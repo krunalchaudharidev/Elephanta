@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IUserAddressService, UserAddressService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IOfferService, OfferService>();
+        services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
         services.AddScoped<IWishlistService, WishlistService>();

@@ -1,44 +1,46 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Elephanta.Domain.Constants;
 using Elephanta.API.Helpers;
 using Elephanta.Application.Features.Cart.DTOs;
 using Elephanta.Application.Features.Cart.Interfaces;
+using Elephanta.Application.Features.Catalog.Interfaces;
 using Elephanta.Domain.Entities;
+using Elephanta.Application.Common;
 
 namespace Elephanta.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
 [ApiExplorerSettings(GroupName = "User")]
 public class CartController : ControllerBase
 {
     private readonly ICartService _service;
+    private readonly IProductService _productService;
 
-    public CartController(ICartService service)
+    public CartController(ICartService service, IProductService productService)
     {
         _service = service;
+        _productService = productService;
     }
 
     [HttpPost("items")]
     public async Task<IActionResult> AddItem([FromBody] CartItemRequest req)
     {
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
-        if (!userId.HasValue) return Unauthorized();
+        if (!TryGetCartOwner(req.SessionId, out var userId, out var sessionId))
+            return BadRequest(new { message = "SessionId is required for guest carts" });
 
         if (req.Quantity <= 0) return BadRequest(new { message = "Quantity must be greater than zero" });
 
-        // ensure product exists
-        var product = (await _service.GetItemsByUserAsync(userId.Value)).FirstOrDefault()?.Product;
-        // above is just to keep parity; better to fetch product in service if needed. We'll set unit price in service based on product data.
+        var product = await _productService.GetProductByIdAsync(req.ProductId);
+        if (product == null) return NotFound(new { message = "Product not found" });
 
         var item = new CartItem
         {
             Id = Guid.NewGuid(),
-            UserId = userId.Value,
+            UserId = userId,
+            SessionId = sessionId,
             ProductId = req.ProductId,
             Quantity = req.Quantity,
+            UnitPrice = product.Price,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -57,53 +59,58 @@ public class CartController : ControllerBase
     }
 
     [HttpPut("items/{id}")]
-    public async Task<IActionResult> UpdateItem(Guid id, [FromBody] UpdateCartItemRequest req)
+    public async Task<IActionResult> UpdateItem(Guid id, [FromBody] UpdateCartItemRequest req, [FromQuery] string? sessionId)
     {
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
-        if (!userId.HasValue) return Unauthorized();
+        if (!TryGetCartOwner(sessionId, out var userId, out sessionId))
+            return BadRequest(new { message = "SessionId is required for guest carts" });
 
         if (req.Quantity <= 0) return BadRequest(new { message = "Quantity must be greater than zero" });
 
         var existing = await _service.GetItemByIdAsync(id);
-        if (existing == null || existing.UserId != userId.Value) return NotFound();
+        if (existing == null || !IsOwnedBy(existing, userId, sessionId)) return NotFound();
+
+        var product = await _productService.GetProductByIdAsync(existing.ProductId);
+        if (product == null) return NotFound(new { message = "Product not found" });
 
         existing.Quantity = req.Quantity;
+        existing.UnitPrice = product.Price;
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _service.UpdateItemAsync(existing);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Cart item updated successfully", existing.Id));
     }
 
     [HttpDelete("items/{id}")]
-    public async Task<IActionResult> DeleteItem(Guid id)
+    public async Task<IActionResult> DeleteItem(Guid id, [FromQuery] string? sessionId)
     {
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
-        if (!userId.HasValue) return Unauthorized();
+        if (!TryGetCartOwner(sessionId, out var userId, out sessionId))
+            return BadRequest(new { message = "SessionId is required for guest carts" });
 
         var existing = await _service.GetItemByIdAsync(id);
-        if (existing == null || existing.UserId != userId.Value) return NotFound();
+        if (existing == null || !IsOwnedBy(existing, userId, sessionId)) return NotFound();
 
         await _service.DeleteItemAsync(id);
-        return NoContent();
+        return Ok(new ApiResponse(true, "Cart item deleted successfully", id));
     }
 
     [HttpGet("items")]
-    public async Task<IActionResult> GetItems([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetItems([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? sessionId = null)
     {
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
-        if (!userId.HasValue) return Unauthorized();
+        if (!TryGetCartOwner(sessionId, out var userId, out sessionId))
+            return BadRequest(new { message = "SessionId is required for guest carts" });
 
-        var paged = await _service.GetItemsByUserAsync(userId.Value, pageNumber, pageSize);
+        var paged = await _service.GetItemsAsync(userId, sessionId, pageNumber, pageSize);
         var items = paged.Items.Select(c => new CartItemResponse
         {
             Id = c.Id,
             ProductId = c.ProductId,
             ProductName = c.Product?.Name ?? string.Empty,
+            PrimaryImageId = c.Product?.Images?.FirstOrDefault(image => image.IsPrimary && image.MediaId.HasValue)?.MediaId,
             Quantity = c.Quantity,
-            UnitPrice = c.UnitPrice
+            UnitPrice = c.Product?.Price ?? c.UnitPrice
         }).ToList();
 
-        var result = new Elephanta.Application.Common.PagedResult<CartItemResponse>
+        var result = new PagedResult<CartItemResponse>
         {
             Items = items,
             TotalCount = paged.TotalCount,
@@ -115,23 +122,38 @@ public class CartController : ControllerBase
     }
 
     [HttpGet("items/{id}")]
-    public async Task<IActionResult> GetItem(Guid id)
+    public async Task<IActionResult> GetItem(Guid id, [FromQuery] string? sessionId)
     {
-        var userId = ClaimsHelper.GetUserIdFromClaims(User);
-        if (!userId.HasValue) return Unauthorized();
+        if (!TryGetCartOwner(sessionId, out var userId, out sessionId))
+            return BadRequest(new { message = "SessionId is required for guest carts" });
 
         var c = await _service.GetItemByIdAsync(id);
-        if (c == null || c.UserId != userId.Value) return NotFound();
+        if (c == null || !IsOwnedBy(c, userId, sessionId)) return NotFound();
 
         var resp = new CartItemResponse
         {
             Id = c.Id,
             ProductId = c.ProductId,
             ProductName = c.Product?.Name ?? string.Empty,
+            PrimaryImageId = c.Product?.Images?.FirstOrDefault(image => image.IsPrimary && image.MediaId.HasValue)?.MediaId,
             Quantity = c.Quantity,
-            UnitPrice = c.UnitPrice
+            UnitPrice = c.Product?.Price ?? c.UnitPrice,
         };
 
         return Ok(resp);
+    }
+
+    private bool TryGetCartOwner(string? requestedSessionId, out Guid? userId, out string? sessionId)
+    {
+        userId = ClaimsHelper.GetUserIdFromClaims(User);
+        sessionId = userId.HasValue ? null : requestedSessionId;
+        return userId.HasValue || !string.IsNullOrWhiteSpace(sessionId);
+    }
+
+    private static bool IsOwnedBy(CartItem item, Guid? userId, string? sessionId)
+    {
+        return userId.HasValue
+            ? item.UserId == userId && item.SessionId == null
+            : item.UserId == null && item.SessionId == sessionId;
     }
 }
