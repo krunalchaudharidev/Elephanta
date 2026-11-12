@@ -16,9 +16,14 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 
         builder.Property(x => x.UnitPrice).HasColumnType("decimal(18,4)");
 
-        builder.Property(x => x.SessionId);
+        builder.HasIndex(x => new { x.CartId, x.ProductId })
+            .IsUnique()
+            .HasFilter("\"CartId\" IS NOT NULL");
 
-        builder.HasIndex(x => x.UserId);
+        builder.HasOne(x => x.Cart)
+            .WithMany()
+            .HasForeignKey(x => x.CartId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.Product)
             .WithMany()
@@ -26,9 +31,5 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
 
-        builder.HasOne(x => x.User)
-            .WithMany()
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -60,9 +60,12 @@ public class CustomerSupportService : ICustomerSupportService
             .ToListAsync();
     }
 
-    public async Task<Elephanta.Application.Common.PagedResult<CustomerSupportRequest>> GetAllAsync(int pageNumber, int pageSize)
+    public async Task<Elephanta.Application.Common.PagedResult<CustomerSupportRequest>> GetAllAsync(int pageNumber, int pageSize, bool? isResolved = null)
     {
         var query = _db.CustomerSupportRequests.AsQueryable();
+        if (isResolved.HasValue)
+            query = query.Where(c => c.IsResolved == isResolved.Value);
+
         var total = await query.CountAsync();
         var items = await query.OrderByDescending(c => c.CreatedAt).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
 

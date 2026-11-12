@@ -194,9 +194,9 @@ public class OfferController : ControllerBase
     }
 
     [HttpGet("offers/search")]
-    public async Task<IActionResult> SearchOffers([FromQuery] string? name, [FromQuery] string? code, [FromQuery] bool? isActive, [FromQuery] string? sort, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> SearchOffers([FromQuery] string? name, [FromQuery] string? code, [FromQuery] bool? isActive, [FromQuery] string? sort, [FromQuery] bool includeExpired = false, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var paged = await _service.SearchOffersAsync(name, code, sort, isActive, pageNumber, pageSize);
+        var paged = await _service.SearchOffersAsync(name, code, sort, isActive, pageNumber, pageSize, includeExpired);
         var items = paged.Items.Select(o => new OfferResponse
         {
             Id = o.Id,

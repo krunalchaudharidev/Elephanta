@@ -5,9 +5,7 @@ namespace Elephanta.Domain.Entities;
 
 public class CartItem : BaseEntity
 {
-    public Guid? UserId { get; set; }
-
-    public string? SessionId { get; set; }
+    public Guid? CartId { get; set; }
 
     public Guid ProductId { get; set; }
 
@@ -18,5 +16,5 @@ public class CartItem : BaseEntity
     // Navigation
     public Product Product { get; set; } = null!;
 
-    public User? User { get; set; }
+    public Cart? Cart { get; set; }
 }

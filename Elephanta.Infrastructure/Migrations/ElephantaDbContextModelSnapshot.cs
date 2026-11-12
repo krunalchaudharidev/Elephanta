@@ -22,10 +22,52 @@ namespace Elephanta.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Elephanta.Domain.Entities.Cart", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CouponCode")
+                        .HasColumnType("character varying");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OfferId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SessionId")
+                        .HasColumnType("character varying");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OfferId");
+
+                    b.HasIndex("SessionId")
+                        .IsUnique()
+                        .HasFilter("\"SessionId\" IS NOT NULL");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
+
+                    b.ToTable("Carts", (string)null);
+                });
+
             modelBuilder.Entity("Elephanta.Domain.Entities.CartItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CartId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -37,23 +79,19 @@ namespace Elephanta.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SessionId")
-                        .HasColumnType("text");
-
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("CartId", "ProductId")
+                        .IsUnique()
+                        .HasFilter("\"CartId\" IS NOT NULL");
 
                     b.ToTable("CartItems", (string)null);
                 });
@@ -1110,22 +1148,39 @@ namespace Elephanta.Infrastructure.Migrations
                     b.ToTable("Wishlists", (string)null);
                 });
 
-            modelBuilder.Entity("Elephanta.Domain.Entities.CartItem", b =>
+            modelBuilder.Entity("Elephanta.Domain.Entities.Cart", b =>
                 {
-                    b.HasOne("Elephanta.Domain.Entities.Product", "Product")
+                    b.HasOne("Elephanta.Domain.Entities.Offer", "Offer")
                         .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("OfferId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Elephanta.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("Product");
+                    b.Navigation("Offer");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Elephanta.Domain.Entities.CartItem", b =>
+                {
+                    b.HasOne("Elephanta.Domain.Entities.Cart", "Cart")
+                        .WithMany()
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Elephanta.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Elephanta.Domain.Entities.Category", b =>

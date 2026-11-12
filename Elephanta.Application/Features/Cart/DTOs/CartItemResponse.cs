@@ -10,4 +10,5 @@ public class CartItemResponse
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public Guid? PrimaryImageId { get; set; }
+    public int StockQuantity { get; set; }
 }

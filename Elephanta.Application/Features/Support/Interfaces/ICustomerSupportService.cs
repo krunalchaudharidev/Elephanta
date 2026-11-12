@@ -12,5 +12,5 @@ public interface ICustomerSupportService
     Task DeleteAsync(Guid id);
     Task<CustomerSupportRequest?> GetByIdAsync(Guid id);
     Task<List<CustomerSupportRequest>> GetByEmailAsync(string email);
-    Task<Elephanta.Application.Common.PagedResult<CustomerSupportRequest>> GetAllAsync(int pageNumber, int pageSize);
+    Task<Elephanta.Application.Common.PagedResult<CustomerSupportRequest>> GetAllAsync(int pageNumber, int pageSize, bool? isResolved = null);
 }

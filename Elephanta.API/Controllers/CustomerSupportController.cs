@@ -81,9 +81,21 @@ public class CustomerSupportController : ControllerBase
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpGet("requests")]
-    public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null)
     {
-        var paged = await _service.GetAllAsync(pageNumber, pageSize);
+        var normalizedStatus = status?.Trim();
+        bool? isResolved = normalizedStatus?.ToLowerInvariant() switch
+        {
+            null or "" => null,
+            "pending" => false,
+            "resolved" => true,
+            _ => null
+        };
+
+        if (!string.IsNullOrEmpty(normalizedStatus) && isResolved is null)
+            return BadRequest(new ApiResponse(false, "Status must be Pending or Resolved"));
+
+        var paged = await _service.GetAllAsync(pageNumber, pageSize, isResolved);
         var items = paged.Items.Select(c => new CustomerSupportRequestResponse
         {
             Id = c.Id,

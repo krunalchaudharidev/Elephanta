@@ -11,8 +11,9 @@ public interface IOfferRepository
     Task<Offer> AddOfferAsync(Offer offer);
     Task UpdateOfferAsync(Offer offer);
     Task<Offer?> GetOfferByIdAsync(Guid id);
+    Task<Offer?> GetOfferByCodeAsync(string code);
     Task<PagedResult<Offer>> GetOffersAsync(int pageNumber, int pageSize);
-    Task<PagedResult<Offer>> SearchOffersAsync(string? name, string? code, string? sort, bool? isActive, int pageNumber, int pageSize);
+    Task<PagedResult<Offer>> SearchOffersAsync(string? name, string? code, string? sort, bool? isActive, int pageNumber, int pageSize, bool includeExpired = false);
 
     Task<OfferImage> AddImageAsync(OfferImage img);
     Task UpdateImageAsync(OfferImage img);

@@ -37,6 +37,13 @@ public class OfferRepository : IOfferRepository
         return await _db.Offers.Include(o => o.Images).FirstOrDefaultAsync(o => o.Id == id);
     }
 
+    public async Task<Offer?> GetOfferByCodeAsync(string code)
+    {
+        var normalizedCode = code.Trim().ToLower();
+        return await _db.Offers.FirstOrDefaultAsync(o =>
+            !o.IsDeleted && o.Code.ToLower() == normalizedCode);
+    }
+
     public async Task<PagedResult<Offer>> GetOffersAsync(int pageNumber, int pageSize)
     {
         // Exclude soft-deleted offers
@@ -46,12 +53,18 @@ public class OfferRepository : IOfferRepository
         return new PagedResult<Offer> { Items = items, TotalCount = total, PageNumber = pageNumber, PageSize = pageSize };
     }
 
-    public async Task<PagedResult<Offer>> SearchOffersAsync(string? name, string? code, string? sort, bool? isActive, int pageNumber, int pageSize)
+    public async Task<PagedResult<Offer>> SearchOffersAsync(string? name, string? code, string? sort, bool? isActive, int pageNumber, int pageSize, bool includeExpired = false)
     {
         var q = _db.Offers
             .Include(o => o.Images)
             .Where(o => !o.IsDeleted)
             .AsQueryable();
+
+        if (!includeExpired)
+        {
+            var now = DateTime.UtcNow;
+            q = q.Where(o => o.EndDate >= now);
+        }
 
         if (!string.IsNullOrWhiteSpace(name)) q = q.Where(o => o.Name.Contains(name));
         if (!string.IsNullOrWhiteSpace(code)) q = q.Where(o => o.Code.Contains(code));
