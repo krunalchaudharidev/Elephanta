@@ -46,6 +46,8 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(x => x.IsFeatured).HasColumnType("boolean");
 
+        builder.Property(x => x.UseCommonFaqs).HasColumnType("boolean");
+
         builder.Property(x => x.IsDeleted).HasColumnType("boolean").HasDefaultValue(false);
         builder.Property(x => x.DeletedAt).HasColumnType("timestamp with time zone");
 

@@ -35,6 +35,8 @@ public class ProductRequest
 
     public bool IsFeatured { get; set; } = false;
 
+    public bool UseCommonFaqs { get; set; } = false;
+
     [Required]
     public Guid CategoryId { get; set; }
 
@@ -69,6 +71,8 @@ public class ProductUpdateRequest
     public bool? IsActive { get; set; }
 
     public bool? IsFeatured { get; set; }
+
+    public bool? UseCommonFaqs { get; set; }
 
     public Guid? CategoryId { get; set; }
 
@@ -105,6 +109,8 @@ public class ProductResponse
     public bool IsActive { get; set; }
 
     public bool IsFeatured { get; set; }
+
+    public bool UseCommonFaqs { get; set; }
 
     public Guid CategoryId { get; set; }
 

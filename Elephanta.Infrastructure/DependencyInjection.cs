@@ -11,6 +11,7 @@ using Elephanta.Infrastructure.Services;
 using Elephanta.Application.Features.Media.Interfaces;
 using Elephanta.Application.Features.WebsiteSettings.Interfaces;
 using Elephanta.Application.Features.Wishlist.Interfaces;
+using Elephanta.Application.Features.CommonFaqs.Interfaces;
 
 namespace Elephanta.Infrastructure;
 
@@ -40,6 +41,8 @@ public static class DependencyInjection
         services.AddScoped<ICustomerSupportService, CustomerSupportService>();
         services.AddScoped<IWebsiteSettingRepository, WebsiteSettingRepository>();
         services.AddScoped<IWebsiteSettingService, WebsiteSettingService>();
+        services.AddScoped<ICommonFaqRepository, CommonFaqRepository>();
+        services.AddScoped<ICommonFaqService, CommonFaqService>();
 
         return services;
     }

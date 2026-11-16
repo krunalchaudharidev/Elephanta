@@ -38,6 +38,7 @@ public class ElephantaDbContext : DbContext
     public DbSet<ProductReview> ProductReviews { get; set; } = null!;
     public DbSet<ProductReviewImage> ProductReviewImages { get; set; } = null!;
     public DbSet<ProductFaq> ProductFaqs { get; set; } = null!;
+    public DbSet<CommonFaq> CommonFaqs { get; set; } = null!;
     public DbSet<CustomerSupportRequest> CustomerSupportRequests { get; set; } = null!;
 
     public DbSet<Offer> Offers { get; set; } = null!;
@@ -82,6 +83,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new MediaConfiguration());
         modelBuilder.ApplyConfiguration(new ProductFaqConfiguration());
+        modelBuilder.ApplyConfiguration(new CommonFaqConfiguration());
         modelBuilder.ApplyConfiguration(new CustomerSupportRequestConfiguration());
         modelBuilder.ApplyConfiguration(new WebsiteSettingConfiguration());
         modelBuilder.Entity<User>();
@@ -108,6 +110,7 @@ public class ElephantaDbContext : DbContext
         modelBuilder.Entity<Category>();
         modelBuilder.Entity<Media>();
         modelBuilder.Entity<ProductFaq>();
+        modelBuilder.Entity<CommonFaq>();
         modelBuilder.Entity<CustomerSupportRequest>();
         modelBuilder.Entity<WebsiteSetting>();
     }

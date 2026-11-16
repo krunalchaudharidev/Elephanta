@@ -30,6 +30,8 @@ public class Product : BaseEntity
 
     public bool IsFeatured { get; set; } = false;
 
+    public bool UseCommonFaqs { get; set; } = false;
+
     // Category
     public Guid CategoryId { get; set; }
 

@@ -295,6 +295,7 @@ public class ProductController : ControllerBase
             StockQuantity = req.StockQuantity,
             IsActive = req.IsActive,
             IsFeatured = req.IsFeatured,
+            UseCommonFaqs = req.UseCommonFaqs,
             CategoryId = req.CategoryId,
             CreatedAt = DateTime.UtcNow
         };
@@ -337,6 +338,7 @@ public class ProductController : ControllerBase
             SoldQuantity = added.SoldQuantity,
             IsActive = added.IsActive,
             IsFeatured = added.IsFeatured,
+            UseCommonFaqs = added.UseCommonFaqs,
             CategoryId = added.CategoryId,
             ImageIds = (req.ImageIds != null && req.ImageIds.Count > 0) ? req.ImageIds : (added.Images?.Select(i => i.Id).ToList() ?? new List<Guid>()),
             ReviewCount = added.Reviews?.Count ?? 0,
@@ -368,6 +370,7 @@ public class ProductController : ControllerBase
         if (req.StockQuantity.HasValue) existing.StockQuantity = req.StockQuantity.Value;
         if (req.IsActive.HasValue) existing.IsActive = req.IsActive.Value;
         if (req.IsFeatured.HasValue) existing.IsFeatured = req.IsFeatured.Value;
+        if (req.UseCommonFaqs.HasValue) existing.UseCommonFaqs = req.UseCommonFaqs.Value;
         if (req.CategoryId.HasValue) existing.CategoryId = req.CategoryId.Value;
 
         // Handle image additions: create ProductImage records linking this product to media
@@ -463,6 +466,7 @@ public class ProductController : ControllerBase
             SoldQuantity = p.SoldQuantity,
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
+            UseCommonFaqs = p.UseCommonFaqs,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
@@ -503,6 +507,7 @@ public class ProductController : ControllerBase
             SoldQuantity = p.SoldQuantity,
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
+            UseCommonFaqs = p.UseCommonFaqs,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,
@@ -697,6 +702,7 @@ public class ProductController : ControllerBase
             SoldQuantity = p.SoldQuantity,
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
+            UseCommonFaqs = p.UseCommonFaqs,
             CategoryId = p.CategoryId,
             ImageIds = p.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
             ReviewCount = p.Reviews?.Count ?? 0,

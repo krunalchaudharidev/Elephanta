@@ -1,4 +1,5 @@
 using Elephanta.Application.Features.Authentication.Interfaces;
+using Elephanta.Application.Common;
 using Elephanta.Domain.Entities;
 
 namespace Elephanta.Infrastructure.Services;
@@ -10,6 +11,23 @@ public class UserService : IUserService
     public UserService(IUserRepository userRepository)
     {
         _userRepository = userRepository;
+    }
+
+    public async Task<PagedResult<User>> GetCustomersAsync(
+        int pageNumber,
+        int pageSize,
+        string? name,
+        string? email,
+        string? phoneNumber,
+        bool sortDescending)
+    {
+        return await _userRepository.GetCustomersAsync(
+            pageNumber,
+            pageSize,
+            name,
+            email,
+            phoneNumber,
+            sortDescending);
     }
 
     public async Task<User> CreateAsync(User user)

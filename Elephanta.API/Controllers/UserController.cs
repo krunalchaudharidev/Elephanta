@@ -136,6 +136,60 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// Get all users. Requires Admin role.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [ApiExplorerSettings(GroupName = "Admin")]
+    [HttpGet("users")]
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? name = null,
+        [FromQuery] string? email = null,
+        [FromQuery] string? phoneNumber = null,
+        [FromQuery] string? sortOrder = "asc")
+    {
+        if (!string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new ApiResponse(false, "sortOrder must be 'asc' or 'desc'"));
+        }
+
+        var pagedUsers = await _userService.GetCustomersAsync(
+            pageNumber,
+            pageSize,
+            name,
+            email,
+            phoneNumber,
+            string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase));
+        var response = new PagedResult<UserResponse>
+        {
+            Items = pagedUsers.Items.Select(user => new UserResponse
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                MiddleName = user.MiddleName,
+                LastName = user.LastName,
+                Gender = user.Gender,
+                DateOfBirth = user.DateOfBirth,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Roles = user.UserRoles?
+                    .Select(userRole => userRole.Role?.Name)
+                    .Where(role => !string.IsNullOrWhiteSpace(role))
+                    .Select(role => role!)
+                    .Distinct()
+                    .ToList() ?? new List<string>()
+            }).ToList(),
+            TotalCount = pagedUsers.TotalCount,
+            PageNumber = pagedUsers.PageNumber,
+            PageSize = pagedUsers.PageSize
+        };
+
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Get current authenticated user's basic information.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.UserOrAdmin)]
