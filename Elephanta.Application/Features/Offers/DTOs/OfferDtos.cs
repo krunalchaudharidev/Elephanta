@@ -34,6 +34,8 @@ public class OfferRequest
 
     public int? UsageLimit { get; set; }
 
+    public int? UsageLimitPerCustomer { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public List<Guid>? ImageIds { get; set; }
@@ -67,6 +69,8 @@ public class OfferUpdateRequest
 
     public int? UsageLimit { get; set; }
 
+    public int? UsageLimitPerCustomer { get; set; }
+
     public bool? IsActive { get; set; } = true;
 
     public List<Guid>? ImageIds { get; set; }
@@ -98,6 +102,8 @@ public class OfferResponse
     public DateTime EndDate { get; set; }
 
     public int? UsageLimit { get; set; }
+
+    public int? UsageLimitPerCustomer { get; set; }
 
     public int UsageCount { get; set; }
 

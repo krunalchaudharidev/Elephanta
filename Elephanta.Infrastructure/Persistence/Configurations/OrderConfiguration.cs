@@ -26,6 +26,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.Currency)
             .HasMaxLength(3);
 
+        builder.Property(x => x.GuestEmail)
+            .HasMaxLength(255);
+
+        builder.Property(x => x.GuestPhoneNumber)
+            .HasMaxLength(50);
+
         builder.Property(x => x.Subtotal).HasColumnType("decimal(18,4)");
         builder.Property(x => x.DiscountAmount).HasColumnType("decimal(18,4)");
         builder.Property(x => x.TaxAmount).HasColumnType("decimal(18,4)");
@@ -36,6 +42,6 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .WithMany()
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired();
+            .IsRequired(false);
     }
 }

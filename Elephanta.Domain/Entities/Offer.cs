@@ -25,6 +25,8 @@ public class Offer : BaseEntity
 
     public int? UsageLimit { get; set; }
 
+    public int? UsageLimitPerCustomer { get; set; }
+
     public int UsageCount { get; set; }
 
     public bool IsActive { get; set; } = true;

@@ -6,9 +6,13 @@ public class Order : BaseEntity
 {
     public string OrderNumber { get; set; } = null!;
 
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
 
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
+
+    public string? GuestEmail { get; set; }
+
+    public string? GuestPhoneNumber { get; set; }
 
     public string Status { get; set; } = "Pending";
 

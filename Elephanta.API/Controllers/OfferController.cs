@@ -37,6 +37,7 @@ public class OfferController : ControllerBase
             StartDate = DateTimeConverter.ConvertIstToUtc(req.StartDate),
             EndDate = DateTimeConverter.ConvertIstToUtc(req.EndDate),
             UsageLimit = req.UsageLimit,
+            UsageLimitPerCustomer = req.UsageLimitPerCustomer,
             IsActive = req.IsActive,
             CreatedAt = DateTime.UtcNow
         };
@@ -75,6 +76,7 @@ public class OfferController : ControllerBase
             StartDate = added.StartDate,
             EndDate = added.EndDate,
             UsageLimit = added.UsageLimit,
+            UsageLimitPerCustomer = added.UsageLimitPerCustomer,
             UsageCount = added.UsageCount,
             IsActive = added.IsActive,
             ImageIds = (req.ImageIds != null && req.ImageIds.Count > 0) ? req.ImageIds : (added.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>()),
@@ -103,6 +105,7 @@ public class OfferController : ControllerBase
         if (req.StartDate.HasValue) existing.StartDate = DateTimeConverter.ConvertIstToUtc(req.StartDate.Value);
         if (req.EndDate.HasValue) existing.EndDate = DateTimeConverter.ConvertIstToUtc(req.EndDate.Value);
         if (req.UsageLimit.HasValue) existing.UsageLimit = req.UsageLimit.Value;
+        if (req.UsageLimitPerCustomer.HasValue) existing.UsageLimitPerCustomer = req.UsageLimitPerCustomer.Value;
         if (req.IsActive.HasValue) existing.IsActive = req.IsActive.Value;
         // Handle image additions: create OfferImage records linking this offer to media
         if (req.ImageIds != null && req.ImageIds.Count > 0)
@@ -176,6 +179,7 @@ public class OfferController : ControllerBase
             StartDate = o.StartDate,
             EndDate = o.EndDate,
             UsageLimit = o.UsageLimit,
+            UsageLimitPerCustomer = o.UsageLimitPerCustomer,
             UsageCount = o.UsageCount,
             IsActive = o.IsActive,
             ImageIds = o.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
@@ -210,6 +214,7 @@ public class OfferController : ControllerBase
             StartDate = o.StartDate,
             EndDate = o.EndDate,
             UsageLimit = o.UsageLimit,
+            UsageLimitPerCustomer = o.UsageLimitPerCustomer,
             UsageCount = o.UsageCount,
             IsActive = o.IsActive,
             ImageIds = o.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
@@ -245,6 +250,7 @@ public class OfferController : ControllerBase
             StartDate = o.StartDate,
             EndDate = o.EndDate,
             UsageLimit = o.UsageLimit,
+            UsageLimitPerCustomer = o.UsageLimitPerCustomer,
             UsageCount = o.UsageCount,
             IsActive = o.IsActive,
             ImageIds = o.Images?.Where(i => i.MediaId.HasValue).Select(i => i.MediaId!.Value).ToList() ?? new List<Guid>(),
